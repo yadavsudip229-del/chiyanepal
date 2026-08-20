@@ -1,0 +1,404 @@
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { AlertTriangle, Check, ChefHat, Minus, Plus, Receipt } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
+import { placeOrder, raiseRedFlag } from "@/lib/orders.functions";
+import { formatSeconds } from "@/lib/live-orders";
+import heroImage from "@/assets/chiya-hero.jpg";
+
+export const Route = createFileRoute("/order/$token")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Order at your table — Chiya Ghar" },
+      {
+        name: "description",
+        content: "Scan, browse the Chiya Ghar menu and order chiya, coffee and snacks straight from your table.",
+      },
+      { property: "og:title", content: "Order at your table — Chiya Ghar" },
+      { property: "og:description", content: "Order chiya, coffee and snacks from your table at Chiya Ghar." },
+    ],
+  }),
+  component: CustomerOrderPage,
+});
+
+type ActiveOrder = {
+  id: string;
+  status: string;
+  eta_minutes: number | null;
+  eta_set_at: string | null;
+  total_amount: number;
+  created_at: string;
+  payment_status: string;
+  order_items: { id: string; item_name: string; quantity: number; price_at_order: number }[];
+  red_flags: { id: string; status: string }[];
+};
+
+function CustomerOrderPage() {
+  const { token } = Route.useParams();
+  const queryClient = useQueryClient();
+  const storageKey = `chiya_active_order_${token}`;
+  const [cart, setCart] = useState<Record<string, number>>({});
+  const [note, setNote] = useState("");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    setOrderId(window.localStorage.getItem(storageKey));
+  }, [storageKey]);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const tableQuery = useQuery({
+    queryKey: ["table", token],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tables")
+        .select("id, table_number")
+        .eq("qr_token", token)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+
+  const menuQuery = useQuery({
+    queryKey: ["menu"],
+    queryFn: async () => {
+      const [cats, items] = await Promise.all([
+        supabase.from("menu_categories").select("id, name, sort_order").order("sort_order"),
+        supabase
+          .from("menu_items")
+          .select("id, category_id, name, description, price, photo_url, is_available")
+          .order("sort_order"),
+      ]);
+      if (cats.error) throw new Error(cats.error.message);
+      if (items.error) throw new Error(items.error.message);
+      return { categories: cats.data ?? [], items: items.data ?? [] };
+    },
+  });
+
+  const orderQuery = useQuery({
+    queryKey: ["active-order", orderId],
+    enabled: !!orderId,
+    queryFn: async (): Promise<ActiveOrder | null> => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(
+          "id, status, eta_minutes, eta_set_at, total_amount, created_at, payment_status, order_items(id, item_name, quantity, price_at_order), red_flags(id, status)",
+        )
+        .eq("id", orderId!)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data as unknown as ActiveOrder | null;
+    },
+  });
+
+  useEffect(() => {
+    if (!orderId) return;
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
+        () => queryClient.invalidateQueries({ queryKey: ["active-order", orderId] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "red_flags", filter: `order_id=eq.${orderId}` },
+        () => queryClient.invalidateQueries({ queryKey: ["active-order", orderId] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [orderId, queryClient]);
+
+  const items = menuQuery.data?.items ?? [];
+  const cartLines = useMemo(
+    () =>
+      Object.entries(cart)
+        .filter(([, qty]) => qty > 0)
+        .map(([id, qty]) => ({ item: items.find((i) => i.id === id), quantity: qty }))
+        .filter((line) => !!line.item),
+    [cart, items],
+  );
+  const cartTotal = cartLines.reduce((sum, l) => sum + Number(l.item!.price) * l.quantity, 0);
+
+  const setQty = (id: string, delta: number) =>
+    setCart((c) => ({ ...c, [id]: Math.max(0, (c[id] ?? 0) + delta) }));
+
+  const submit = async () => {
+    setSubmitting(true);
+    try {
+      const result = await placeOrder({
+        data: {
+          tableToken: token,
+          items: cartLines.map((l) => ({ menu_item_id: l.item!.id, quantity: l.quantity })),
+          note: note || undefined,
+        },
+      });
+      window.localStorage.setItem(storageKey, result.orderId);
+      setOrderId(result.orderId);
+      setCart({});
+      setNote("");
+      toast.success("Order sent to the kitchen");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not place the order");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (tableQuery.isLoading) {
+    return <p className="p-8 text-center text-muted-foreground">Loading…</p>;
+  }
+
+  if (!tableQuery.data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 text-center">
+        <div>
+          <h1 className="text-2xl">This QR code isn't valid</h1>
+          <p className="mt-2 text-muted-foreground">Please ask our staff for the correct table code.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const order = orderQuery.data;
+  const orderActive = order && order.status !== "served";
+  const openFlag = order?.red_flags?.some((f) => f.status === "open");
+  const remaining =
+    order?.eta_set_at && order.eta_minutes
+      ? Math.round((new Date(order.eta_set_at).getTime() + order.eta_minutes * 60000 - now) / 1000)
+      : null;
+
+  return (
+    <div className="min-h-screen bg-background pb-40">
+      <div className="relative h-40 overflow-hidden">
+        <img
+          src={heroImage}
+          alt="Steaming glasses of Nepali milk chiya on a wooden counter"
+          width={1600}
+          height={900}
+          className="h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 flex flex-col justify-end bg-foreground/45 p-4">
+          <h1 className="font-display text-3xl text-background">Chiya Ghar</h1>
+          <p className="text-sm text-background/85">Table {tableQuery.data.table_number}</p>
+        </div>
+      </div>
+
+      {order && (
+        <section className="mx-auto max-w-2xl px-4 pt-4">
+          <div className="card-surface p-5">
+            <h2 className="text-xl">Your order</h2>
+            <ol className="mt-4 space-y-3">
+              <StatusStep
+                active={true}
+                done={order.status !== "received"}
+                icon={<Receipt className="size-4" />}
+                title="Order Received"
+                detail={new Date(order.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              />
+              <StatusStep
+                active={order.status === "preparing"}
+                done={order.status === "served"}
+                icon={<ChefHat className="size-4" />}
+                title="Preparing"
+                detail={
+                  order.status === "preparing" && remaining !== null
+                    ? remaining >= 0
+                      ? `ETA ${order.eta_minutes} min · ${formatSeconds(remaining)} left`
+                      : `Taking a little longer (${formatSeconds(remaining)})`
+                    : order.status === "received"
+                      ? "Waiting for the kitchen to confirm an ETA"
+                      : "Done"
+                }
+              />
+              <StatusStep
+                active={order.status === "served"}
+                done={order.status === "served"}
+                icon={<Check className="size-4" />}
+                title="Served"
+                detail={order.status === "served" ? "Enjoy your chiya!" : "Coming to your table"}
+              />
+            </ol>
+
+            <ul className="mt-4 border-t pt-3 text-sm">
+              {order.order_items.map((i) => (
+                <li key={i.id} className="flex justify-between">
+                  <span>
+                    {i.quantity}× {i.item_name}
+                  </span>
+                  <span>Rs. {(Number(i.price_at_order) * i.quantity).toFixed(0)}</span>
+                </li>
+              ))}
+              <li className="mt-2 flex justify-between border-t pt-2 font-semibold">
+                <span>Total ({order.payment_status === "paid" ? "paid" : "pay at counter"})</span>
+                <span>Rs. {Number(order.total_amount).toFixed(0)}</span>
+              </li>
+            </ul>
+
+            {orderActive && (
+              <Button
+                variant="destructive"
+                size="lg"
+                className="mt-5 w-full"
+                disabled={openFlag}
+                onClick={async () => {
+                  try {
+                    await raiseRedFlag({ data: { orderId: order.id, tableToken: token } });
+                    toast.success("Staff have been alerted");
+                    void queryClient.invalidateQueries({ queryKey: ["active-order", order.id] });
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Could not alert staff");
+                  }
+                }}
+              >
+                <AlertTriangle className="mr-2 size-5" />
+                {openFlag ? "Staff alerted — someone is coming" : "Feeling forgotten? Tap here"}
+              </Button>
+            )}
+
+            {!orderActive && (
+              <Button
+                variant="outline"
+                className="mt-5 w-full"
+                onClick={() => {
+                  window.localStorage.removeItem(storageKey);
+                  setOrderId(null);
+                }}
+              >
+                Order something else
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {!order && (
+        <section className="mx-auto max-w-2xl px-4 py-4">
+          {menuQuery.data?.categories.map((cat) => {
+            const catItems = items.filter((i) => i.category_id === cat.id);
+            if (catItems.length === 0) return null;
+            return (
+              <div key={cat.id} className="mb-6">
+                <h2 className="mb-3 text-2xl">{cat.name}</h2>
+                <div className="space-y-3">
+                  {catItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`card-surface flex items-center gap-3 p-3 ${item.is_available ? "" : "opacity-50"}`}
+                    >
+                      {item.photo_url && (
+                        <img
+                          src={item.photo_url}
+                          alt={item.name}
+                          loading="lazy"
+                          className="size-16 rounded-lg object-cover"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold">{item.name}</p>
+                        {item.description && (
+                          <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                        <p className="mt-1 text-sm font-medium">Rs. {Number(item.price).toFixed(0)}</p>
+                      </div>
+                      {item.is_available ? (
+                        <div className="flex items-center gap-2">
+                          {(cart[item.id] ?? 0) > 0 && (
+                            <>
+                              <Button size="icon" variant="outline" onClick={() => setQty(item.id, -1)}>
+                                <Minus className="size-4" />
+                              </Button>
+                              <span className="w-5 text-center font-semibold">{cart[item.id]}</span>
+                            </>
+                          )}
+                          <Button size="icon" onClick={() => setQty(item.id, 1)}>
+                            <Plus className="size-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sold out</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          {cartLines.length > 0 && (
+            <Textarea
+              placeholder="Any note for the kitchen? (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="mt-2"
+            />
+          )}
+        </section>
+      )}
+
+      {!order && cartLines.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 border-t bg-card p-4 shadow-lg">
+          <div className="mx-auto flex max-w-2xl items-center gap-4">
+            <div className="text-sm">
+              <p className="font-semibold">
+                {cartLines.reduce((n, l) => n + l.quantity, 0)} items · Rs. {cartTotal.toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">Pay at counter (cash or card)</p>
+            </div>
+            <Button size="lg" className="ml-auto" disabled={submitting} onClick={submit}>
+              {submitting ? "Sending…" : "Place order"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatusStep({
+  active,
+  done,
+  icon,
+  title,
+  detail,
+}: {
+  active: boolean;
+  done: boolean;
+  icon: React.ReactNode;
+  title: string;
+  detail: string;
+}) {
+  const state = done ? "done" : active ? "active" : "idle";
+  return (
+    <li className="flex items-start gap-3">
+      <span
+        className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${
+          state === "done"
+            ? "bg-status-served text-primary-foreground"
+            : state === "active"
+              ? "bg-status-prep text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {icon}
+      </span>
+      <div>
+        <p className={`font-semibold ${state === "idle" ? "text-muted-foreground" : ""}`}>{title}</p>
+        <p className="text-xs text-muted-foreground">{detail}</p>
+      </div>
+    </li>
+  );
+}
