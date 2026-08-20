@@ -46,7 +46,8 @@ function TablesPage() {
   const { session } = useStaffSession("owner");
   const queryClient = useQueryClient();
   const [newTable, setNewTable] = useState("");
-  const [settingsDraft, setSettingsDraft] = useState<Record<string, string> | null>(null);
+  type SettingsDraft = { shop_name: string; wifi_ssid: string; wifi_password: string; wifi_encryption: string };
+  const [settingsDraft, setSettingsDraft] = useState<SettingsDraft | null>(null);
   const [origin, setOrigin] = useState("");
 
   useEffect(() => setOrigin(window.location.origin), []);
@@ -68,7 +69,7 @@ function TablesPage() {
   if (!session) return <Navigate to="/staff" replace />;
 
   const settings = data.data?.settings;
-  const draft = settingsDraft ?? {
+  const draft: SettingsDraft = settingsDraft ?? {
     shop_name: settings?.shop_name ?? "",
     wifi_ssid: settings?.wifi_ssid ?? "",
     wifi_password: settings?.wifi_password ?? "",
@@ -124,10 +125,10 @@ function TablesPage() {
                     data: {
                       token: session.token,
                       id: settings!.id,
-                      shop_name: draft.shop_name!,
-                      wifi_ssid: draft.wifi_ssid!,
-                      wifi_password: draft.wifi_password!,
-                      wifi_encryption: draft.wifi_encryption!,
+                      shop_name: draft.shop_name,
+                      wifi_ssid: draft.wifi_ssid,
+                      wifi_password: draft.wifi_password,
+                      wifi_encryption: draft.wifi_encryption,
                     },
                   }),
                 "Settings saved",
@@ -188,7 +189,7 @@ function TablesPage() {
             <p className="text-xs text-muted-foreground">{draft.shop_name}</p>
             <div className="mt-3 flex justify-center gap-4">
               <QrTile
-                value={wifiPayload(draft.wifi_ssid ?? "", draft.wifi_password ?? "", draft.wifi_encryption ?? "WPA")}
+                value={wifiPayload(draft.wifi_ssid, draft.wifi_password, draft.wifi_encryption)}
                 caption="Scan for WiFi"
               />
               <QrTile value={`${origin}/order/${table.qr_token}`} caption="Scan to order" />

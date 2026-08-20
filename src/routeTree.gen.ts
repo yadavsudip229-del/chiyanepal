@@ -15,6 +15,7 @@ import { Route as WaiterRouteImport } from './routes/waiter'
 import { Route as OrderTokenRouteImport } from './routes/order.$token'
 import { Route as OwnerIndexRouteImport } from './routes/owner.index'
 import { Route as OwnerMenuRouteImport } from './routes/owner.menu'
+import { Route as OwnerTablesRouteImport } from './routes/owner.tables'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const OwnerMenuRoute = OwnerMenuRouteImport.update({
   path: '/owner/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerTablesRoute = OwnerTablesRouteImport.update({
+  id: '/owner/tables',
+  path: '/owner/tables',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/waiter': typeof WaiterRoute
   '/order/$token': typeof OrderTokenRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/waiter': typeof WaiterRoute
   '/order/$token': typeof OrderTokenRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/tables': typeof OwnerTablesRoute
   '/owner': typeof OwnerIndexRoute
 }
 export interface FileRoutesById {
@@ -70,14 +78,28 @@ export interface FileRoutesById {
   '/waiter': typeof WaiterRoute
   '/order/$token': typeof OrderTokenRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/staff' | '/waiter' | '/order/$token' | '/owner/menu' | '/owner/'
+    | '/'
+    | '/staff'
+    | '/waiter'
+    | '/order/$token'
+    | '/owner/menu'
+    | '/owner/tables'
+    | '/owner/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/staff' | '/waiter' | '/order/$token' | '/owner/menu' | '/owner'
+  to:
+    | '/'
+    | '/staff'
+    | '/waiter'
+    | '/order/$token'
+    | '/owner/menu'
+    | '/owner/tables'
+    | '/owner'
   id:
     | '__root__'
     | '/'
@@ -85,6 +107,7 @@ export interface FileRouteTypes {
     | '/waiter'
     | '/order/$token'
     | '/owner/menu'
+    | '/owner/tables'
     | '/owner/'
   fileRoutesById: FileRoutesById
 }
@@ -94,6 +117,7 @@ export interface RootRouteChildren {
   WaiterRoute: typeof WaiterRoute
   OrderTokenRoute: typeof OrderTokenRoute
   OwnerMenuRoute: typeof OwnerMenuRoute
+  OwnerTablesRoute: typeof OwnerTablesRoute
   OwnerIndexRoute: typeof OwnerIndexRoute
 }
 
@@ -141,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner/tables': {
+      id: '/owner/tables'
+      path: '/owner/tables'
+      fullPath: '/owner/tables'
+      preLoaderRoute: typeof OwnerTablesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -150,6 +181,7 @@ const rootRouteChildren: RootRouteChildren = {
   WaiterRoute: WaiterRoute,
   OrderTokenRoute: OrderTokenRoute,
   OwnerMenuRoute: OwnerMenuRoute,
+  OwnerTablesRoute: OwnerTablesRoute,
   OwnerIndexRoute: OwnerIndexRoute,
 }
 export const routeTree = rootRouteImport
