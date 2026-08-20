@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 export const saveCategory = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string; id?: string; name: string; sort_order?: number }) => input)
+  .inputValidator((input: { token: string; id?: string | undefined; name: string; sort_order?: number | undefined }) => input)
   .handler(async ({ data }) => {
     const { requireRole } = await import("./staff-session.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -31,12 +31,12 @@ export const saveMenuItem = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       token: string;
-      id?: string;
+      id?: string | undefined;
       category_id: string;
       name: string;
-      description?: string;
+      description?: string | undefined;
       price: number;
-      photo_url?: string;
+      photo_url?: string | undefined;
       is_available: boolean;
     }) => input,
   )

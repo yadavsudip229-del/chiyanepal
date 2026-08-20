@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 type CartLine = { menu_item_id: string; quantity: number };
 
 export const placeOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { tableToken: string; items: CartLine[]; note?: string }) => input)
+  .inputValidator((input: { tableToken: string; items: CartLine[]; note?: string | undefined }) => input)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
