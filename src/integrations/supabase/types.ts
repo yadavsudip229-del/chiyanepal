@@ -123,6 +123,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancelled_at: string | null
           created_at: string
           eta_minutes: number | null
           eta_set_at: string | null
@@ -133,9 +134,13 @@ export type Database = {
           served_at: string | null
           status: string
           table_id: string
+          time_request_at: string | null
+          time_request_minutes: number | null
+          time_response: string | null
           total_amount: number
         }
         Insert: {
+          cancelled_at?: string | null
           created_at?: string
           eta_minutes?: number | null
           eta_set_at?: string | null
@@ -146,9 +151,13 @@ export type Database = {
           served_at?: string | null
           status?: string
           table_id: string
+          time_request_at?: string | null
+          time_request_minutes?: number | null
+          time_response?: string | null
           total_amount?: number
         }
         Update: {
+          cancelled_at?: string | null
           created_at?: string
           eta_minutes?: number | null
           eta_set_at?: string | null
@@ -159,6 +168,9 @@ export type Database = {
           served_at?: string | null
           status?: string
           table_id?: string
+          time_request_at?: string | null
+          time_request_minutes?: number | null
+          time_response?: string | null
           total_amount?: number
         }
         Relationships: [
@@ -216,8 +228,10 @@ export type Database = {
       shop_settings: {
         Row: {
           currency: string
+          hero_image_url: string | null
           id: string
           shop_name: string
+          tagline: string
           updated_at: string
           wifi_encryption: string
           wifi_password: string
@@ -225,8 +239,10 @@ export type Database = {
         }
         Insert: {
           currency?: string
+          hero_image_url?: string | null
           id?: string
           shop_name?: string
+          tagline?: string
           updated_at?: string
           wifi_encryption?: string
           wifi_password?: string
@@ -234,8 +250,10 @@ export type Database = {
         }
         Update: {
           currency?: string
+          hero_image_url?: string | null
           id?: string
           shop_name?: string
+          tagline?: string
           updated_at?: string
           wifi_encryption?: string
           wifi_password?: string

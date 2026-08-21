@@ -33,6 +33,9 @@ export function StaffShell({
               <Link to="/owner/menu" className="rounded-md px-3 py-1.5 hover:bg-secondary" activeProps={{ className: "bg-secondary font-semibold" }}>
                 Menu
               </Link>
+              <Link to="/owner/landing" className="rounded-md px-3 py-1.5 hover:bg-secondary" activeProps={{ className: "bg-secondary font-semibold" }}>
+                Landing
+              </Link>
               <Link to="/owner/tables" className="rounded-md px-3 py-1.5 hover:bg-secondary" activeProps={{ className: "bg-secondary font-semibold" }}>
                 Tables & QR
               </Link>
