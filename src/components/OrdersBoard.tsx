@@ -11,7 +11,7 @@ import {
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
-import { markOrderServed, markPaid, resolveRedFlag, setOrderEta } from "@/lib/orders.functions";
+import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
 import type { StaffSession } from "@/lib/staff-client";
 
 const ETA_PRESETS = [5, 10, 15, 20, 30];
@@ -74,8 +74,9 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
     }
   };
 
-  const active = (data ?? []).filter((o) => o.status !== "served");
+  const active = (data ?? []).filter((o) => o.status !== "served" && o.status !== "cancelled");
   const served = (data ?? []).filter((o) => o.status === "served");
+  const cancelled = (data ?? []).filter((o) => o.status === "cancelled");
 
   return (
     <div className="space-y-6">
@@ -145,6 +146,55 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
               </ul>
 
               {order.note && <p className="mt-2 text-sm italic text-muted-foreground">“{order.note}”</p>}
+
+              {order.time_request_minutes !== null && (
+                <div className="mt-3 rounded-lg border border-dashed p-3 text-sm">
+                  <p className="font-medium">
+                    Guest can only wait {order.time_request_minutes} min — can you make it?
+                  </p>
+                  {order.time_response ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      You answered: {order.time_response === "accepted" ? "Yes, we can" : "Sorry, we cannot"}
+                    </p>
+                  ) : (
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        size="sm"
+                        disabled={busy === order.id}
+                        onClick={() =>
+                          run(
+                            order.id,
+                            () =>
+                              respondTimeRequest({
+                                data: { token: session.token, orderId: order.id, answer: "accepted" },
+                              }),
+                            "Told the guest yes",
+                          )
+                        }
+                      >
+                        Yes, we can
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busy === order.id}
+                        onClick={() =>
+                          run(
+                            order.id,
+                            () =>
+                              respondTimeRequest({
+                                data: { token: session.token, orderId: order.id, answer: "declined" },
+                              }),
+                            "Told the guest no",
+                          )
+                        }
+                      >
+                        No, too soon
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {order.status === "preparing" && remaining !== null && (
                 <p className="mt-3 flex items-center gap-2 text-sm font-semibold">
@@ -253,6 +303,23 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
           );
         })}
       </div>
+
+      {cancelled.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-lg">Cancelled by guests</h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {cancelled.slice(0, 6).map((order) => (
+              <div key={order.id} className="rounded-xl border p-3 text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">
+                  Table {order.tables?.table_number ?? "?"}
+                </span>{" "}
+                · cancelled ·{" "}
+                {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {served.length > 0 && (
         <div>

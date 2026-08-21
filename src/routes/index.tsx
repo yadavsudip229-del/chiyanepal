@@ -22,12 +22,11 @@ export const Route = createFileRoute("/")({
       ],
     };
   },
-  errorComponent: () => <Landing />,
   component: Landing,
 });
 
 function Landing() {
-  const settings = Route.useLoaderData?.();
+  const settings = Route.useLoaderData();
   const shopName = settings?.shop_name || "Chiya Ghar";
   const tagline =
     settings?.tagline ||
