@@ -1,44 +1,51 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { QrCode, Timer, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getPublicShopSettings, heroSrc } from "@/lib/shop.functions";
 import heroImage from "@/assets/chiya-hero.jpg";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Chiya Ghar — QR Table Ordering for Our Tea Shop" },
-      {
-        name: "description",
-        content:
-          "Chiya Ghar table ordering: guests scan the QR at their table, order chiya and snacks, and watch their order status live.",
-      },
-      { property: "og:title", content: "Chiya Ghar — QR Table Ordering" },
-      {
-        property: "og:description",
-        content: "Scan, order and track your chiya live. Staff dashboards for owner and waiters.",
-      },
-    ],
-  }),
+  loader: () => getPublicShopSettings(),
+  head: ({ loaderData }) => {
+    const name = loaderData?.shop_name || "Chiya Ghar";
+    const description =
+      loaderData?.tagline ||
+      "Guests scan the QR at their table, order chiya and snacks, and watch their order status live.";
+    return {
+      meta: [
+        { title: `${name} — QR Table Ordering for Our Tea Shop` },
+        { name: "description", content: description.slice(0, 155) },
+        { property: "og:title", content: `${name} — QR Table Ordering` },
+        { property: "og:description", content: description.slice(0, 155) },
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+    };
+  },
+  errorComponent: () => <Landing />,
   component: Landing,
 });
 
 function Landing() {
+  const settings = Route.useLoaderData?.();
+  const shopName = settings?.shop_name || "Chiya Ghar";
+  const tagline =
+    settings?.tagline ||
+    "Table-side ordering for our tea shop. Guests scan the QR code on their table, order, and follow their chiya from kitchen to table.";
+
   return (
     <div className="min-h-screen">
       <section className="relative">
         <img
-          src={heroImage}
-          alt="Glasses of steaming Nepali milk chiya on a wooden tea shop counter"
+          src={heroSrc(settings?.hero_image_url, heroImage)}
+          alt={`${shopName} tea shop`}
           width={1600}
           height={900}
           className="h-[60vh] w-full object-cover"
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-foreground/50 px-6 text-center">
-          <h1 className="font-display text-5xl text-background sm:text-6xl">Chiya Ghar</h1>
-          <p className="mt-3 max-w-lg text-background/90">
-            Table-side ordering for our tea shop. Guests scan the QR code on their table, order, and follow
-            their chiya from kitchen to table.
-          </p>
+          <h1 className="font-display text-5xl text-background sm:text-6xl">{shopName}</h1>
+          <p className="mt-3 max-w-lg text-background/90">{tagline}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link to="/staff">Staff sign in</Link>
