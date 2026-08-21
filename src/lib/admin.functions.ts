@@ -125,3 +125,50 @@ export const saveShopSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const saveLanding = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      token: string;
+      id: string;
+      shop_name: string;
+      tagline: string;
+      hero_image_url?: string | null | undefined;
+    }) => input,
+  )
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner"]);
+    const name = data.shop_name.trim().slice(0, 60);
+    if (!name) throw new Error("Shop name is required");
+    const { error } = await supabaseAdmin
+      .from("shop_settings")
+      .update({
+        shop_name: name,
+        tagline: data.tagline.trim().slice(0, 300),
+        hero_image_url: data.hero_image_url?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const uploadHeroImage = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string; contentType: string; base64: string }) => input)
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner"]);
+    if (!/^image\/(jpeg|png|webp)$/.test(data.contentType)) throw new Error("Use a JPG, PNG or WebP image");
+    if (data.base64.length > 8_000_000) throw new Error("Image is too large (max ~5MB)");
+    const binary = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    const ext = data.contentType.split("/")[1]!.replace("jpeg", "jpg");
+    const key = `hero-${Date.now()}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("branding")
+      .upload(key, binary, { contentType: data.contentType, upsert: true });
+    if (error) throw new Error(error.message);
+    return { key };
+  });
