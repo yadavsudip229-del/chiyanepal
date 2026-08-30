@@ -238,7 +238,7 @@ function CustomerOrderPage() {
   }
 
   const order = orderQuery.data;
-  const orderActive = order && order.status !== "served";
+  const orderActive = order && order.status !== "served" && order.status !== "cancelled";
   const openFlag = order?.red_flags?.some((f) => f.status === "open");
   const remaining =
     order?.eta_set_at && order.eta_minutes
