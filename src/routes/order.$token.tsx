@@ -68,6 +68,11 @@ function CustomerOrderPage() {
     return () => clearInterval(id);
   }, []);
 
+  const shopQuery = useQuery({
+    queryKey: ["public-shop-settings"],
+    queryFn: () => getPublicShopSettings(),
+  });
+
   const tableQuery = useQuery({
     queryKey: ["table", token],
     queryFn: async () => {
