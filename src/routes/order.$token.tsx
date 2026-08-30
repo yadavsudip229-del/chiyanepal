@@ -98,7 +98,7 @@ function CustomerOrderPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, status, eta_minutes, eta_set_at, total_amount, created_at, payment_status, order_items(id, item_name, quantity, price_at_order), red_flags(id, status)",
+          "id, status, eta_minutes, eta_set_at, total_amount, created_at, payment_status, note, time_request_minutes, time_response, order_items(id, item_name, menu_item_id, quantity, price_at_order), red_flags(id, status)",
         )
         .eq("id", orderId!)
         .maybeSingle();
