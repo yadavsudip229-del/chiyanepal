@@ -261,7 +261,7 @@ function CustomerOrderPage() {
         </div>
       </div>
 
-      {order && (
+      {order && !editing && (
         <section className="mx-auto max-w-2xl px-4 pt-4">
           <div className="card-surface p-5">
             <h2 className="text-xl">Your order</h2>
