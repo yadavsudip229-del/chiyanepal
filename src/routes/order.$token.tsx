@@ -34,7 +34,10 @@ type ActiveOrder = {
   total_amount: number;
   created_at: string;
   payment_status: string;
-  order_items: { id: string; item_name: string; quantity: number; price_at_order: number }[];
+  note: string | null;
+  time_request_minutes: number | null;
+  time_response: string | null;
+  order_items: { id: string; item_name: string; menu_item_id: string | null; quantity: number; price_at_order: number }[];
   red_flags: { id: string; status: string }[];
 };
 
@@ -46,7 +49,9 @@ function CustomerOrderPage() {
   const [note, setNote] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
 
   useEffect(() => {
     setOrderId(window.localStorage.getItem(storageKey));
