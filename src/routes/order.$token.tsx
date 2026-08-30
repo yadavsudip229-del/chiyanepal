@@ -398,8 +398,24 @@ function CustomerOrderPage() {
         </section>
       )}
 
-      {!order && (
+      {(!order || editing) && (
         <section className="mx-auto max-w-2xl px-4 py-4">
+          {editing && (
+            <div className="card-surface mb-4 flex items-center justify-between p-3">
+              <p className="text-sm font-semibold">Editing your order</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setCart({});
+                  setNote("");
+                }}
+              >
+                Discard changes
+              </Button>
+            </div>
+          )}
           {menuQuery.data?.categories.map((cat) => {
             const catItems = items.filter((i) => i.category_id === cat.id);
             if (catItems.length === 0) return null;
