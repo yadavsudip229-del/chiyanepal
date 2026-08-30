@@ -312,6 +312,55 @@ function CustomerOrderPage() {
               </li>
             </ul>
 
+            {order.status === "cancelled" && (
+              <p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                This order was cancelled.
+              </p>
+            )}
+
+            {orderActive && (
+              <div className="mt-5 space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" onClick={() => startEditing(order)}>
+                    <Pencil className="mr-2 size-4" />
+                    Edit my order
+                  </Button>
+                  <Button variant="outline" onClick={() => void cancelMyOrder(order.id)}>
+                    <X className="mr-2 size-4" />
+                    Cancel order
+                  </Button>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <Clock className="size-4" />
+                    In a hurry? Tell us how long you can wait
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[5, 10, 15, 20].map((m) => (
+                      <Button
+                        key={m}
+                        size="sm"
+                        variant={order.time_request_minutes === m ? "default" : "outline"}
+                        onClick={() => void sendTimeRequest(order.id, m)}
+                      >
+                        {m} min
+                      </Button>
+                    ))}
+                  </div>
+                  {order.time_request_minutes && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {order.time_response === "accepted"
+                        ? `Yes — we can serve you within ${order.time_request_minutes} min.`
+                        : order.time_response === "declined"
+                          ? `Sorry, ${order.time_request_minutes} min isn't possible right now.`
+                          : `Asked for ${order.time_request_minutes} min — waiting for a reply.`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {orderActive && (
               <Button
                 variant="destructive"
