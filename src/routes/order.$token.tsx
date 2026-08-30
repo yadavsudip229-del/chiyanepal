@@ -478,7 +478,7 @@ function CustomerOrderPage() {
         </section>
       )}
 
-      {!order && cartLines.length > 0 && (
+      {(!order || editing) && cartLines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 border-t bg-card p-4 shadow-lg">
           <div className="mx-auto flex max-w-2xl items-center gap-4">
             <div className="text-sm">
@@ -487,8 +487,13 @@ function CustomerOrderPage() {
               </p>
               <p className="text-xs text-muted-foreground">Pay at counter (cash or card)</p>
             </div>
-            <Button size="lg" className="ml-auto" disabled={submitting} onClick={submit}>
-              {submitting ? "Sending…" : "Place order"}
+            <Button
+              size="lg"
+              className="ml-auto"
+              disabled={submitting}
+              onClick={() => (editing && order ? void saveEdits(order.id) : void submit())}
+            >
+              {submitting ? "Sending…" : editing ? "Save changes" : "Place order"}
             </Button>
           </div>
         </div>
