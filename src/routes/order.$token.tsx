@@ -14,6 +14,7 @@ import {
   requestTimeLimit,
 } from "@/lib/orders.functions";
 import { formatSeconds } from "@/lib/live-orders";
+import { getPublicShopSettings, heroSrc } from "@/lib/shop.functions";
 import heroImage from "@/assets/chiya-hero.jpg";
 
 export const Route = createFileRoute("/order/$token")({
