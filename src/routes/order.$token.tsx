@@ -163,6 +163,59 @@ function CustomerOrderPage() {
     }
   };
 
+  const startEditing = (o: ActiveOrder) => {
+    const next: Record<string, number> = {};
+    for (const line of o.order_items) if (line.menu_item_id) next[line.menu_item_id] = line.quantity;
+    setCart(next);
+    setNote(o.note ?? "");
+    setEditing(true);
+    window.scrollTo({ top: 0 });
+  };
+
+  const saveEdits = async (id: string) => {
+    setSubmitting(true);
+    try {
+      await updateOrderItems({
+        data: {
+          orderId: id,
+          tableToken: token,
+          items: cartLines.map((l) => ({ menu_item_id: l.item!.id, quantity: l.quantity })),
+          note: note || undefined,
+        },
+      });
+      setEditing(false);
+      setCart({});
+      setNote("");
+      toast.success("Your order was updated");
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update the order");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const cancelMyOrder = async (id: string) => {
+    if (!window.confirm("Cancel this order?")) return;
+    try {
+      await cancelOrder({ data: { orderId: id, tableToken: token } });
+      toast.success("Your order was cancelled");
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not cancel the order");
+    }
+  };
+
+  const sendTimeRequest = async (id: string, minutes: number) => {
+    try {
+      await requestTimeLimit({ data: { orderId: id, tableToken: token, minutes } });
+      toast.success(`Asked the kitchen if ${minutes} min works`);
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send the request");
+    }
+  };
+
   if (tableQuery.isLoading) {
     return <p className="p-8 text-center text-muted-foreground">Loading…</p>;
   }
