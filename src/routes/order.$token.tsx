@@ -286,13 +286,15 @@ function CustomerOrderPage() {
                 icon={<ChefHat className="size-4" />}
                 title="Preparing"
                 detail={
-                  order.status === "preparing" && remaining !== null
-                    ? remaining >= 0
-                      ? `ETA ${order.eta_minutes} min · ${formatSeconds(remaining)} left`
-                      : `Taking a little longer (${formatSeconds(remaining)})`
-                    : order.status === "received"
-                      ? "Waiting for the kitchen to confirm an ETA"
-                      : "Done"
+                  order.status === "cancelled"
+                    ? "Cancelled"
+                    : order.status === "preparing" && remaining !== null
+                      ? remaining >= 0
+                        ? `ETA ${order.eta_minutes} min · ${formatSeconds(remaining)} left`
+                        : `Taking a little longer (${formatSeconds(remaining)})`
+                      : order.status === "received"
+                        ? "Waiting for the kitchen to confirm an ETA"
+                        : "Done"
                 }
               />
               <StatusStep
@@ -300,7 +302,13 @@ function CustomerOrderPage() {
                 done={order.status === "served"}
                 icon={<Check className="size-4" />}
                 title="Served"
-                detail={order.status === "served" ? "Enjoy your chiya!" : "Coming to your table"}
+                detail={
+                  order.status === "cancelled"
+                    ? "Order cancelled"
+                    : order.status === "served"
+                      ? "Enjoy your chiya!"
+                      : "Coming to your table"
+                }
               />
             </ol>
 
