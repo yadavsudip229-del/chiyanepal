@@ -2,12 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Check, ChefHat, Minus, Plus, Receipt } from "lucide-react";
+import { AlertTriangle, Check, ChefHat, Clock, Minus, Pencil, Plus, Receipt, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { placeOrder, raiseRedFlag } from "@/lib/orders.functions";
+import {
+  placeOrder,
+  raiseRedFlag,
+  updateOrderItems,
+  cancelOrder,
+  requestTimeLimit,
+} from "@/lib/orders.functions";
 import { formatSeconds } from "@/lib/live-orders";
+import { getPublicShopSettings, heroSrc } from "@/lib/shop.functions";
 import heroImage from "@/assets/chiya-hero.jpg";
 
 export const Route = createFileRoute("/order/$token")({
@@ -34,7 +41,10 @@ type ActiveOrder = {
   total_amount: number;
   created_at: string;
   payment_status: string;
-  order_items: { id: string; item_name: string; quantity: number; price_at_order: number }[];
+  note: string | null;
+  time_request_minutes: number | null;
+  time_response: string | null;
+  order_items: { id: string; item_name: string; menu_item_id: string | null; quantity: number; price_at_order: number }[];
   red_flags: { id: string; status: string }[];
 };
 
@@ -46,7 +56,9 @@ function CustomerOrderPage() {
   const [note, setNote] = useState("");
   const [orderId, setOrderId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+
 
   useEffect(() => {
     setOrderId(window.localStorage.getItem(storageKey));
@@ -56,6 +68,11 @@ function CustomerOrderPage() {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  const shopQuery = useQuery({
+    queryKey: ["public-shop-settings"],
+    queryFn: () => getPublicShopSettings(),
+  });
 
   const tableQuery = useQuery({
     queryKey: ["table", token],
@@ -93,7 +110,7 @@ function CustomerOrderPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, status, eta_minutes, eta_set_at, total_amount, created_at, payment_status, order_items(id, item_name, quantity, price_at_order), red_flags(id, status)",
+          "id, status, eta_minutes, eta_set_at, total_amount, created_at, payment_status, note, time_request_minutes, time_response, order_items(id, item_name, menu_item_id, quantity, price_at_order), red_flags(id, status)",
         )
         .eq("id", orderId!)
         .maybeSingle();
@@ -158,6 +175,59 @@ function CustomerOrderPage() {
     }
   };
 
+  const startEditing = (o: ActiveOrder) => {
+    const next: Record<string, number> = {};
+    for (const line of o.order_items) if (line.menu_item_id) next[line.menu_item_id] = line.quantity;
+    setCart(next);
+    setNote(o.note ?? "");
+    setEditing(true);
+    window.scrollTo({ top: 0 });
+  };
+
+  const saveEdits = async (id: string) => {
+    setSubmitting(true);
+    try {
+      await updateOrderItems({
+        data: {
+          orderId: id,
+          tableToken: token,
+          items: cartLines.map((l) => ({ menu_item_id: l.item!.id, quantity: l.quantity })),
+          note: note || undefined,
+        },
+      });
+      setEditing(false);
+      setCart({});
+      setNote("");
+      toast.success("Your order was updated");
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update the order");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const cancelMyOrder = async (id: string) => {
+    if (!window.confirm("Cancel this order?")) return;
+    try {
+      await cancelOrder({ data: { orderId: id, tableToken: token } });
+      toast.success("Your order was cancelled");
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not cancel the order");
+    }
+  };
+
+  const sendTimeRequest = async (id: string, minutes: number) => {
+    try {
+      await requestTimeLimit({ data: { orderId: id, tableToken: token, minutes } });
+      toast.success(`Asked the kitchen if ${minutes} min works`);
+      void queryClient.invalidateQueries({ queryKey: ["active-order", id] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send the request");
+    }
+  };
+
   if (tableQuery.isLoading) {
     return <p className="p-8 text-center text-muted-foreground">Loading…</p>;
   }
@@ -174,7 +244,7 @@ function CustomerOrderPage() {
   }
 
   const order = orderQuery.data;
-  const orderActive = order && order.status !== "served";
+  const orderActive = order && order.status !== "served" && order.status !== "cancelled";
   const openFlag = order?.red_flags?.some((f) => f.status === "open");
   const remaining =
     order?.eta_set_at && order.eta_minutes
@@ -185,19 +255,20 @@ function CustomerOrderPage() {
     <div className="min-h-screen bg-background pb-40">
       <div className="relative h-40 overflow-hidden">
         <img
-          src={heroImage}
+          src={heroSrc(shopQuery.data?.hero_image_url, heroImage)}
           alt="Steaming glasses of Nepali milk chiya on a wooden counter"
           width={1600}
           height={900}
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 flex flex-col justify-end bg-foreground/45 p-4">
-          <h1 className="font-display text-3xl text-background">Chiya Ghar</h1>
+          <h1 className="font-display text-3xl text-background">{shopQuery.data?.shop_name ?? "Chiya Ghar"}</h1>
           <p className="text-sm text-background/85">Table {tableQuery.data.table_number}</p>
         </div>
       </div>
 
-      {order && (
+
+      {order && !editing && (
         <section className="mx-auto max-w-2xl px-4 pt-4">
           <div className="card-surface p-5">
             <h2 className="text-xl">Your order</h2>
@@ -215,13 +286,15 @@ function CustomerOrderPage() {
                 icon={<ChefHat className="size-4" />}
                 title="Preparing"
                 detail={
-                  order.status === "preparing" && remaining !== null
-                    ? remaining >= 0
-                      ? `ETA ${order.eta_minutes} min · ${formatSeconds(remaining)} left`
-                      : `Taking a little longer (${formatSeconds(remaining)})`
-                    : order.status === "received"
-                      ? "Waiting for the kitchen to confirm an ETA"
-                      : "Done"
+                  order.status === "cancelled"
+                    ? "Cancelled"
+                    : order.status === "preparing" && remaining !== null
+                      ? remaining >= 0
+                        ? `ETA ${order.eta_minutes} min · ${formatSeconds(remaining)} left`
+                        : `Taking a little longer (${formatSeconds(remaining)})`
+                      : order.status === "received"
+                        ? "Waiting for the kitchen to confirm an ETA"
+                        : "Done"
                 }
               />
               <StatusStep
@@ -229,7 +302,13 @@ function CustomerOrderPage() {
                 done={order.status === "served"}
                 icon={<Check className="size-4" />}
                 title="Served"
-                detail={order.status === "served" ? "Enjoy your chiya!" : "Coming to your table"}
+                detail={
+                  order.status === "cancelled"
+                    ? "Order cancelled"
+                    : order.status === "served"
+                      ? "Enjoy your chiya!"
+                      : "Coming to your table"
+                }
               />
             </ol>
 
@@ -247,6 +326,55 @@ function CustomerOrderPage() {
                 <span>Rs. {Number(order.total_amount).toFixed(0)}</span>
               </li>
             </ul>
+
+            {order.status === "cancelled" && (
+              <p className="mt-4 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                This order was cancelled.
+              </p>
+            )}
+
+            {orderActive && (
+              <div className="mt-5 space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" onClick={() => startEditing(order)}>
+                    <Pencil className="mr-2 size-4" />
+                    Edit my order
+                  </Button>
+                  <Button variant="outline" onClick={() => void cancelMyOrder(order.id)}>
+                    <X className="mr-2 size-4" />
+                    Cancel order
+                  </Button>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <p className="flex items-center gap-2 text-sm font-semibold">
+                    <Clock className="size-4" />
+                    In a hurry? Tell us how long you can wait
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[5, 10, 15, 20].map((m) => (
+                      <Button
+                        key={m}
+                        size="sm"
+                        variant={order.time_request_minutes === m ? "default" : "outline"}
+                        onClick={() => void sendTimeRequest(order.id, m)}
+                      >
+                        {m} min
+                      </Button>
+                    ))}
+                  </div>
+                  {order.time_request_minutes && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {order.time_response === "accepted"
+                        ? `Yes — we can serve you within ${order.time_request_minutes} min.`
+                        : order.time_response === "declined"
+                          ? `Sorry, ${order.time_request_minutes} min isn't possible right now.`
+                          : `Asked for ${order.time_request_minutes} min — waiting for a reply.`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {orderActive && (
               <Button
@@ -285,8 +413,24 @@ function CustomerOrderPage() {
         </section>
       )}
 
-      {!order && (
+      {(!order || editing) && (
         <section className="mx-auto max-w-2xl px-4 py-4">
+          {editing && (
+            <div className="card-surface mb-4 flex items-center justify-between p-3">
+              <p className="text-sm font-semibold">Editing your order</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setCart({});
+                  setNote("");
+                }}
+              >
+                Discard changes
+              </Button>
+            </div>
+          )}
           {menuQuery.data?.categories.map((cat) => {
             const catItems = items.filter((i) => i.category_id === cat.id);
             if (catItems.length === 0) return null;
@@ -349,7 +493,7 @@ function CustomerOrderPage() {
         </section>
       )}
 
-      {!order && cartLines.length > 0 && (
+      {(!order || editing) && cartLines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 border-t bg-card p-4 shadow-lg">
           <div className="mx-auto flex max-w-2xl items-center gap-4">
             <div className="text-sm">
@@ -358,8 +502,13 @@ function CustomerOrderPage() {
               </p>
               <p className="text-xs text-muted-foreground">Pay at counter (cash or card)</p>
             </div>
-            <Button size="lg" className="ml-auto" disabled={submitting} onClick={submit}>
-              {submitting ? "Sending…" : "Place order"}
+            <Button
+              size="lg"
+              className="ml-auto"
+              disabled={submitting}
+              onClick={() => (editing && order ? void saveEdits(order.id) : void submit())}
+            >
+              {submitting ? "Sending…" : editing ? "Save changes" : "Place order"}
             </Button>
           </div>
         </div>
