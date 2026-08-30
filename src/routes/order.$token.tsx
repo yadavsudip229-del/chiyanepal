@@ -249,17 +249,18 @@ function CustomerOrderPage() {
     <div className="min-h-screen bg-background pb-40">
       <div className="relative h-40 overflow-hidden">
         <img
-          src={heroImage}
+          src={heroSrc(shopQuery.data?.hero_image_url, heroImage)}
           alt="Steaming glasses of Nepali milk chiya on a wooden counter"
           width={1600}
           height={900}
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 flex flex-col justify-end bg-foreground/45 p-4">
-          <h1 className="font-display text-3xl text-background">Chiya Ghar</h1>
+          <h1 className="font-display text-3xl text-background">{shopQuery.data?.shop_name ?? "Chiya Ghar"}</h1>
           <p className="text-sm text-background/85">Table {tableQuery.data.table_number}</p>
         </div>
       </div>
+
 
       {order && !editing && (
         <section className="mx-auto max-w-2xl px-4 pt-4">
