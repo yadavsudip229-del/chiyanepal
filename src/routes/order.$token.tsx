@@ -6,7 +6,13 @@ import { AlertTriangle, Check, ChefHat, Minus, Plus, Receipt } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { placeOrder, raiseRedFlag } from "@/lib/orders.functions";
+import {
+  placeOrder,
+  raiseRedFlag,
+  updateOrderItems,
+  cancelOrder,
+  requestTimeLimit,
+} from "@/lib/orders.functions";
 import { formatSeconds } from "@/lib/live-orders";
 import heroImage from "@/assets/chiya-hero.jpg";
 
