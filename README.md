@@ -1,3 +1,5 @@
+Hello i am sudip yadav and i am from siraha andn i am living in the kathmandu right now.
+
 # Chiya Ghar Order
 
 Build a QR-code table ordering web app for my tea shop (Nepal) called "Chiya Ghar".
