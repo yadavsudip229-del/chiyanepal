@@ -29,9 +29,17 @@ function StaffLoginPage() {
     setLoading(true);
     try {
       const session = await staffLogin({ data: { pin } });
-      setStaffSession(session);
+      setStaffSession({ token: session.token, role: session.role, name: session.name });
       toast.success(`Welcome, ${session.name}`);
+      if (session.mustChangePin) {
+        toast.warning("You're still on the starter PIN 1234 — set a 6-digit PIN.");
+        if (session.role === "owner") {
+          void navigate({ to: "/owner/staff", replace: true });
+          return;
+        }
+      }
       void navigate({ to: session.role === "owner" ? "/owner" : "/waiter", replace: true });
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign in failed");
       setPin("");
