@@ -266,3 +266,23 @@ export const respondTimeRequest = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getDailySummary = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner", "waiter"]);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const { data: rows, error } = await supabaseAdmin
+      .from("orders")
+      .select("total_amount, cancelled_at")
+      .gte("created_at", start.toISOString());
+    if (error) throw new Error(error.message);
+    const valid = (rows ?? []).filter((r) => !r.cancelled_at);
+    return {
+      orderCount: valid.length,
+      totalRevenue: valid.reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
+    };
+  });
