@@ -80,7 +80,7 @@ function PinCard({
   role: "owner" | "waiter";
   label: string;
   token: string;
-  status?: RoleStatus;
+  status?: RoleStatus | undefined;
   onDone: () => void;
 }) {
   const [pin, setPin] = useState("");
