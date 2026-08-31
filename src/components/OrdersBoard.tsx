@@ -324,7 +324,7 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
         </div>
       )}
 
-      {served.length > 0 && (
+          {isOwner && served.length > 0 && (
         <div>
           <h2 className="mb-3 text-lg">Served today</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
