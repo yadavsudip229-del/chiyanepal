@@ -16,6 +16,7 @@ import { Route as OrderTokenRouteImport } from './routes/order.$token'
 import { Route as OwnerIndexRouteImport } from './routes/owner.index'
 import { Route as OwnerLandingRouteImport } from './routes/owner.landing'
 import { Route as OwnerMenuRouteImport } from './routes/owner.menu'
+import { Route as OwnerStaffRouteImport } from './routes/owner.staff'
 import { Route as OwnerTablesRouteImport } from './routes/owner.tables'
 import { Route as ApiPublicHeroImageRouteImport } from './routes/api/public/hero-image'
 
@@ -54,6 +55,11 @@ const OwnerMenuRoute = OwnerMenuRouteImport.update({
   path: '/owner/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerStaffRoute = OwnerStaffRouteImport.update({
+  id: '/owner/staff',
+  path: '/owner/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerTablesRoute = OwnerTablesRouteImport.update({
   id: '/owner/tables',
   path: '/owner/tables',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/order/$token': typeof OrderTokenRoute
   '/owner/landing': typeof OwnerLandingRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/staff': typeof OwnerStaffRoute
   '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/order/$token': typeof OrderTokenRoute
   '/owner/landing': typeof OwnerLandingRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/staff': typeof OwnerStaffRoute
   '/owner/tables': typeof OwnerTablesRoute
   '/owner': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/order/$token': typeof OrderTokenRoute
   '/owner/landing': typeof OwnerLandingRoute
   '/owner/menu': typeof OwnerMenuRoute
+  '/owner/staff': typeof OwnerStaffRoute
   '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/order/$token'
     | '/owner/landing'
     | '/owner/menu'
+    | '/owner/staff'
     | '/owner/tables'
     | '/owner/'
     | '/api/public/hero-image'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/order/$token'
     | '/owner/landing'
     | '/owner/menu'
+    | '/owner/staff'
     | '/owner/tables'
     | '/owner'
     | '/api/public/hero-image'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/order/$token'
     | '/owner/landing'
     | '/owner/menu'
+    | '/owner/staff'
     | '/owner/tables'
     | '/owner/'
     | '/api/public/hero-image'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   OrderTokenRoute: typeof OrderTokenRoute
   OwnerLandingRoute: typeof OwnerLandingRoute
   OwnerMenuRoute: typeof OwnerMenuRoute
+  OwnerStaffRoute: typeof OwnerStaffRoute
   OwnerTablesRoute: typeof OwnerTablesRoute
   OwnerIndexRoute: typeof OwnerIndexRoute
   ApiPublicHeroImageRoute: typeof ApiPublicHeroImageRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerMenuRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner/staff': {
+      id: '/owner/staff'
+      path: '/owner/staff'
+      fullPath: '/owner/staff'
+      preLoaderRoute: typeof OwnerStaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner/tables': {
       id: '/owner/tables'
       path: '/owner/tables'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrderTokenRoute: OrderTokenRoute,
   OwnerLandingRoute: OwnerLandingRoute,
   OwnerMenuRoute: OwnerMenuRoute,
+  OwnerStaffRoute: OwnerStaffRoute,
   OwnerTablesRoute: OwnerTablesRoute,
   OwnerIndexRoute: OwnerIndexRoute,
   ApiPublicHeroImageRoute: ApiPublicHeroImageRoute,
