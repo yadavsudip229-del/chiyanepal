@@ -74,7 +74,10 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
     }
   };
 
-  const active = (data ?? []).filter((o) => o.status !== "served" && o.status !== "cancelled");
+  const active = (data ?? [])
+    .filter((o) => o.status !== "served" && o.status !== "cancelled")
+    // Oldest order stays first; new orders queue up after it.
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   const served = (data ?? []).filter((o) => o.status === "served");
   const cancelled = (data ?? []).filter((o) => o.status === "cancelled");
 
