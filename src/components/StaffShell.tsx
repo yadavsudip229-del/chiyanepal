@@ -39,6 +39,10 @@ export function StaffShell({
               <Link to="/owner/tables" className="rounded-md px-3 py-1.5 hover:bg-secondary" activeProps={{ className: "bg-secondary font-semibold" }}>
                 Tables & QR
               </Link>
+              <Link to="/owner/staff" className="rounded-md px-3 py-1.5 hover:bg-secondary" activeProps={{ className: "bg-secondary font-semibold" }}>
+                Staff PINs
+              </Link>
+
             </nav>
           )}
           <Button
