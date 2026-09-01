@@ -498,7 +498,9 @@ function CustomerOrderPage() {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">Sold out</span>
+                        <span className="text-xs text-muted-foreground">
+                          {item.is_available ? "" : "Sold out"}
+                        </span>
                       )}
                     </div>
                   ))}
