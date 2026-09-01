@@ -438,7 +438,7 @@ function CustomerOrderPage() {
         </section>
       )}
 
-      {(!order || editing) && (
+      {showMenu && (
         <section className="mx-auto max-w-2xl px-4 py-4">
           {editing && (
             <div className="card-surface mb-4 flex items-center justify-between p-3">
