@@ -253,6 +253,9 @@ function CustomerOrderPage() {
     order?.eta_set_at && order.eta_minutes
       ? Math.round((new Date(order.eta_set_at).getTime() + order.eta_minutes * 60000 - now) / 1000)
       : null;
+  const hasTabs = !!order && !editing;
+  const showOrder = hasTabs && tab === "order";
+  const showMenu = !hasTabs || tab === "menu";
 
   return (
     <div className="min-h-screen bg-background pb-40">
@@ -270,8 +273,27 @@ function CustomerOrderPage() {
         </div>
       </div>
 
+      {hasTabs && (
+        <div className="mx-auto mt-4 flex max-w-2xl gap-2 px-4">
+          <Button
+            className="flex-1"
+            variant={tab === "menu" ? "default" : "outline"}
+            onClick={() => setTab("menu")}
+          >
+            Menu
+          </Button>
+          <Button
+            className="flex-1"
+            variant={tab === "order" ? "default" : "outline"}
+            onClick={() => setTab("order")}
+          >
+            My order
+          </Button>
+        </div>
+      )}
 
-      {order && !editing && (
+      {showOrder && (
+
         <section className="mx-auto max-w-2xl px-4 pt-4">
           <div className="card-surface p-5">
             <h2 className="text-xl">Your order</h2>
