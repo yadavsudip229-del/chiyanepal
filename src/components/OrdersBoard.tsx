@@ -6,13 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   type BoardOrder,
+  type SoundId,
+  SOUND_OPTIONS,
   etaRemaining,
   formatSeconds,
+  playPreview,
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
 import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
 import type { StaffSession } from "@/lib/staff-client";
+
 
 const ETA_PRESETS = [5, 10, 15, 20, 30];
 
@@ -43,16 +47,35 @@ function statusStyle(order: BoardOrder) {
   };
 }
 
-export function OrdersBoard({ session }: { session: StaffSession }) {
+export function OrdersBoard({ session, hideServed }: { session: StaffSession; hideServed?: boolean }) {
   const isOwner = session.role === "owner";
   const { data, isLoading, error } = useLiveBoard();
   const queryClient = useQueryClient();
   const [soundOn, setSoundOn] = useState(true);
+  const [soundId, setSoundId] = useState<SoundId>("chime");
+  const [notifyOn, setNotifyOn] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [customEta, setCustomEta] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  useOrderAlerts(data, soundOn);
+  useEffect(() => {
+    const saved = window.localStorage.getItem("chiya-alerts");
+    if (!saved) return;
+    try {
+      const p = JSON.parse(saved) as { soundOn?: boolean; soundId?: SoundId; notifyOn?: boolean };
+      if (typeof p.soundOn === "boolean") setSoundOn(p.soundOn);
+      if (p.soundId) setSoundId(p.soundId);
+      if (typeof p.notifyOn === "boolean") setNotifyOn(p.notifyOn);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("chiya-alerts", JSON.stringify({ soundOn, soundId, notifyOn }));
+  }, [soundOn, soundId, notifyOn]);
+
+  useOrderAlerts(data, soundOn, soundId, notifyOn);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -60,6 +83,7 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
   }, []);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["board"] });
+
 
   const run = async (key: string, fn: () => Promise<unknown>, message: string) => {
     setBusy(key);
@@ -87,11 +111,58 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
         <p className="text-sm text-muted-foreground">
           {active.length} active {active.length === 1 ? "order" : "orders"} · live updating
         </p>
-        <Button variant="outline" size="sm" onClick={() => setSoundOn((s) => !s)}>
-          {soundOn ? <Bell className="mr-2 size-4" /> : <BellOff className="mr-2 size-4" />}
-          Sound {soundOn ? "on" : "off"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSoundOn((s) => !s)}>
+            {soundOn ? <Bell className="mr-2 size-4" /> : <BellOff className="mr-2 size-4" />}
+            Sound {soundOn ? "on" : "off"}
+          </Button>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={soundId}
+            onChange={(e) => {
+              const id = e.target.value as SoundId;
+              setSoundId(id);
+              playPreview(id);
+            }}
+          >
+            {SOUND_OPTIONS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={() => playPreview(soundId)}>
+            Test
+          </Button>
+          <Button
+            variant={notifyOn ? "default" : "outline"}
+            size="sm"
+            onClick={async () => {
+              if (notifyOn) {
+                setNotifyOn(false);
+                return;
+              }
+              if (typeof Notification === "undefined") {
+                toast.error("Notifications are not supported on this device");
+                return;
+              }
+              const perm =
+                Notification.permission === "granted"
+                  ? "granted"
+                  : await Notification.requestPermission();
+              if (perm === "granted") {
+                setNotifyOn(true);
+                toast.success("Notifications on for new orders");
+              } else {
+                toast.error("Notification permission was blocked");
+              }
+            }}
+          >
+            Notifications {notifyOn ? "on" : "off"}
+          </Button>
+        </div>
       </div>
+
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading orders…</p>}
       {error && <p className="text-sm text-destructive">Could not load orders.</p>}
@@ -324,7 +395,7 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
         </div>
       )}
 
-          {isOwner && served.length > 0 && (
+          {isOwner && !hideServed && served.length > 0 && (
         <div>
           <h2 className="mb-3 text-lg">Served today</h2>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
