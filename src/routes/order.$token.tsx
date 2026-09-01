@@ -483,7 +483,7 @@ function CustomerOrderPage() {
                         )}
                         <p className="mt-1 text-sm font-medium">Rs. {Number(item.price).toFixed(0)}</p>
                       </div>
-                      {item.is_available ? (
+                      {item.is_available && (!order || editing) ? (
                         <div className="flex items-center gap-2">
                           {(cart[item.id] ?? 0) > 0 && (
                             <>
