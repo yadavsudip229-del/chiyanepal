@@ -102,8 +102,36 @@ function beep(pattern: number[]) {
   }
 }
 
+export const SOUND_OPTIONS = [
+  { id: "chime", label: "Chime", order: [660, 990], flag: [880, 880, 880] },
+  { id: "bell", label: "Bell", order: [880, 1320], flag: [1320, 1320, 1320] },
+  { id: "ding", label: "Ding", order: [1200], flag: [1200, 1200, 1200] },
+  { id: "soft", label: "Soft", order: [440, 550], flag: [550, 660, 550] },
+] as const;
+
+export type SoundId = (typeof SOUND_OPTIONS)[number]["id"];
+
+export function playPreview(soundId: SoundId) {
+  const preset = SOUND_OPTIONS.find((s) => s.id === soundId) ?? SOUND_OPTIONS[0];
+  beep([...preset.order]);
+}
+
+function notify(title: string, body: string) {
+  try {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    new Notification(title, { body });
+  } catch {
+    /* notifications unavailable */
+  }
+}
+
 /** Plays a chime when a new order arrives and an urgent tone for new red flags. */
-export function useOrderAlerts(orders: BoardOrder[] | undefined, enabled: boolean) {
+export function useOrderAlerts(
+  orders: BoardOrder[] | undefined,
+  enabled: boolean,
+  soundId: SoundId = "chime",
+  notifyEnabled = false,
+) {
   const seenOrders = useRef<Set<string> | null>(null);
   const seenFlags = useRef<Set<string> | null>(null);
 
@@ -120,17 +148,24 @@ export function useOrderAlerts(orders: BoardOrder[] | undefined, enabled: boolea
       return;
     }
 
+    const newOrder = [...orderIds].some((id) => !seenOrders.current?.has(id));
+    const newFlag = [...flagIds].some((id) => !seenFlags.current?.has(id));
+    const preset = SOUND_OPTIONS.find((s) => s.id === soundId) ?? SOUND_OPTIONS[0];
+
     if (enabled) {
-      const newOrder = [...orderIds].some((id) => !seenOrders.current?.has(id));
-      const newFlag = [...flagIds].some((id) => !seenFlags.current?.has(id));
-      if (newFlag) beep([880, 880, 880]);
-      else if (newOrder) beep([660, 990]);
+      if (newFlag) beep([...preset.flag]);
+      else if (newOrder) beep([...preset.order]);
+    }
+    if (notifyEnabled) {
+      if (newFlag) notify("Customer needs help", "A table tapped the bell.");
+      else if (newOrder) notify("New order", "A new order just came in.");
     }
 
     seenOrders.current = orderIds;
     seenFlags.current = flagIds;
-  }, [orders, enabled]);
+  }, [orders, enabled, soundId, notifyEnabled]);
 }
+
 
 export function etaRemaining(order: BoardOrder, now: number) {
   if (!order.eta_set_at || !order.eta_minutes) return null;
