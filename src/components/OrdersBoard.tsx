@@ -43,16 +43,35 @@ function statusStyle(order: BoardOrder) {
   };
 }
 
-export function OrdersBoard({ session }: { session: StaffSession }) {
+export function OrdersBoard({ session, hideServed }: { session: StaffSession; hideServed?: boolean }) {
   const isOwner = session.role === "owner";
   const { data, isLoading, error } = useLiveBoard();
   const queryClient = useQueryClient();
   const [soundOn, setSoundOn] = useState(true);
+  const [soundId, setSoundId] = useState<SoundId>("chime");
+  const [notifyOn, setNotifyOn] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [customEta, setCustomEta] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
-  useOrderAlerts(data, soundOn);
+  useEffect(() => {
+    const saved = window.localStorage.getItem("chiya-alerts");
+    if (!saved) return;
+    try {
+      const p = JSON.parse(saved) as { soundOn?: boolean; soundId?: SoundId; notifyOn?: boolean };
+      if (typeof p.soundOn === "boolean") setSoundOn(p.soundOn);
+      if (p.soundId) setSoundId(p.soundId);
+      if (typeof p.notifyOn === "boolean") setNotifyOn(p.notifyOn);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("chiya-alerts", JSON.stringify({ soundOn, soundId, notifyOn }));
+  }, [soundOn, soundId, notifyOn]);
+
+  useOrderAlerts(data, soundOn, soundId, notifyOn);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -60,6 +79,7 @@ export function OrdersBoard({ session }: { session: StaffSession }) {
   }, []);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["board"] });
+
 
   const run = async (key: string, fn: () => Promise<unknown>, message: string) => {
     setBusy(key);
