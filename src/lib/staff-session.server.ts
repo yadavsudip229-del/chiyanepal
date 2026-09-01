@@ -16,7 +16,7 @@ export function hashPin(pin: string) {
 }
 
 export function issueToken(claims: Omit<StaffClaims, "exp">) {
-  const full: StaffClaims = { ...claims, exp: Date.now() + 1000 * 60 * 60 * 12 };
+  const full: StaffClaims = { ...claims, exp: Date.now() + 1000 * 60 * 60 * 24 * 365 };
   const payload = Buffer.from(JSON.stringify(full)).toString("base64url");
   return `${payload}.${sign(payload)}`;
 }
