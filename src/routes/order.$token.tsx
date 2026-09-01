@@ -103,6 +103,9 @@ function CustomerOrderPage() {
     },
   });
 
+  const [tab, setTab] = useState<"menu" | "order">("menu");
+
+
   const orderQuery = useQuery({
     queryKey: ["active-order", orderId],
     enabled: !!orderId,
