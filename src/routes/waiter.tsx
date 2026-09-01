@@ -27,7 +27,7 @@ function WaiterDashboard() {
       <p className="mb-4 text-sm text-muted-foreground">
         You can mark orders served and resolve red flags. ETAs are set by the owner.
       </p>
-      <OrdersBoard session={session} />
+      <OrdersBoard session={session} hideServed />
     </StaffShell>
   );
 }
