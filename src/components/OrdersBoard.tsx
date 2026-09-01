@@ -111,11 +111,58 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
         <p className="text-sm text-muted-foreground">
           {active.length} active {active.length === 1 ? "order" : "orders"} · live updating
         </p>
-        <Button variant="outline" size="sm" onClick={() => setSoundOn((s) => !s)}>
-          {soundOn ? <Bell className="mr-2 size-4" /> : <BellOff className="mr-2 size-4" />}
-          Sound {soundOn ? "on" : "off"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setSoundOn((s) => !s)}>
+            {soundOn ? <Bell className="mr-2 size-4" /> : <BellOff className="mr-2 size-4" />}
+            Sound {soundOn ? "on" : "off"}
+          </Button>
+          <select
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+            value={soundId}
+            onChange={(e) => {
+              const id = e.target.value as SoundId;
+              setSoundId(id);
+              playPreview(id);
+            }}
+          >
+            {SOUND_OPTIONS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+          <Button variant="outline" size="sm" onClick={() => playPreview(soundId)}>
+            Test
+          </Button>
+          <Button
+            variant={notifyOn ? "default" : "outline"}
+            size="sm"
+            onClick={async () => {
+              if (notifyOn) {
+                setNotifyOn(false);
+                return;
+              }
+              if (typeof Notification === "undefined") {
+                toast.error("Notifications are not supported on this device");
+                return;
+              }
+              const perm =
+                Notification.permission === "granted"
+                  ? "granted"
+                  : await Notification.requestPermission();
+              if (perm === "granted") {
+                setNotifyOn(true);
+                toast.success("Notifications on for new orders");
+              } else {
+                toast.error("Notification permission was blocked");
+              }
+            }}
+          >
+            Notifications {notifyOn ? "on" : "off"}
+          </Button>
+        </div>
       </div>
+
 
       {isLoading && <p className="text-sm text-muted-foreground">Loading orders…</p>}
       {error && <p className="text-sm text-destructive">Could not load orders.</p>}
