@@ -82,3 +82,19 @@ export const resetPin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+/** Saves this device's push notification subscription for the signed-in staff member. */
+export const savePushSubscription = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string; endpoint: string; p256dh: string; auth: string }) => input)
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const claims = requireRole(data.token, ["owner", "waiter"]);
+    const { error } = await supabaseAdmin
+      .from("push_subscriptions")
+      .upsert(
+        { staff_id: claims.sid, endpoint: data.endpoint, p256dh: data.p256dh, auth: data.auth },
+        { onConflict: "endpoint" }
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
