@@ -16,6 +16,16 @@ import {
 } from "@/lib/live-orders";
 import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
 import type { StaffSession } from "@/lib/staff-client";
+import { savePushSubscription } from "@/lib/staff.functions";
+
+const VAPID_PUBLIC_KEY = "BNASDuCMRo9Bc8iNOmrbeZMdjZ9yl--8hiRHwrR9IMkU5j-qFsX2tnGPgKMNXgzYtqqnrO78uWHFlHEp_5rgGkI";
+
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
 
 
 const ETA_PRESETS = [5, 10, 15, 20, 30];
@@ -137,12 +147,12 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
           <Button
             variant={notifyOn ? "default" : "outline"}
             size="sm"
-            onClick={async () => {
+                      onClick={async () => {
               if (notifyOn) {
                 setNotifyOn(false);
                 return;
               }
-              if (typeof Notification === "undefined") {
+              if (typeof Notification === "undefined" || !("serviceWorker" in navigator)) {
                 toast.error("Notifications are not supported on this device");
                 return;
               }
@@ -150,11 +160,29 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                 Notification.permission === "granted"
                   ? "granted"
                   : await Notification.requestPermission();
-              if (perm === "granted") {
-                setNotifyOn(true);
-                toast.success("Notifications on for new orders");
-              } else {
+              if (perm !== "granted") {
                 toast.error("Notification permission was blocked");
+                return;
+              }
+              try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                });
+                const raw = subscription.toJSON();
+                await savePushSubscription({
+                  data: {
+                    token: session.token,
+                    endpoint: raw.endpoint!,
+                    p256dh: raw.keys!.p256dh!,
+                    auth: raw.keys!.auth!,
+                  },
+                });
+                setNotifyOn(true);
+                toast.success("Notifications on — you'll get alerts even when the app is closed");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not enable notifications");
               }
             }}
           >
