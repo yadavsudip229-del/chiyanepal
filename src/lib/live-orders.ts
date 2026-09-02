@@ -119,7 +119,7 @@ export function playPreview(soundId: SoundId) {
 function notify(title: string, body: string) {
   try {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    new Notification(title, { body });
+    new Notification(title, { body, icon: "/icon-192.png", badge: "/icon-192.png" });
   } catch {
     /* notifications unavailable */
   }
