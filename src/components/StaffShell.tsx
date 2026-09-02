@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { clearStaffSession, type StaffSession } from "@/lib/staff-client";
+import { disablePushOnThisDevice } from "@/lib/push-client";
 
 export function StaffShell({
   session,
