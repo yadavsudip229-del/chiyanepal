@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { staffLogin } from "@/lib/staff.functions";
-import { setStaffSession } from "@/lib/staff-client";
+import { getStaffSession, setStaffSession } from "@/lib/staff-client";
 
 export const Route = createFileRoute("/staff")({
   ssr: false,
@@ -23,6 +23,16 @@ function StaffLoginPage() {
   const navigate = useNavigate();
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Already signed in on this device (e.g. reopened from the home-screen app)?
+  // Skip the PIN screen and go straight to the right dashboard. The session is
+  // only cleared when the user taps "Sign out" manually.
+  useEffect(() => {
+    const existing = getStaffSession();
+    if (existing) {
+      void navigate({ to: existing.role === "owner" ? "/owner" : "/waiter", replace: true });
+    }
+  }, [navigate]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
