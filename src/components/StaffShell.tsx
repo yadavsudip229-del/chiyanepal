@@ -48,8 +48,13 @@ export function StaffShell({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
+            onClick={async () => {
+              await disablePushOnThisDevice();
               clearStaffSession();
+              window.localStorage.setItem(
+                "chiya-alerts",
+                JSON.stringify({ soundOn: true, soundId: "chime", notifyOn: false }),
+              );
               void navigate({ to: "/staff", replace: true });
             }}
           >
