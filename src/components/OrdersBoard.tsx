@@ -175,8 +175,8 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                   data: {
                     token: session.token,
                     endpoint: raw.endpoint!,
-                    p256dh: raw.keys!.p256dh!,
-                    auth: raw.keys!.auth!,
+                    p256dh: raw.keys!["p256dh"]!,
+                    auth: raw.keys!["auth"]!,
                   },
                 });
                 setNotifyOn(true);
