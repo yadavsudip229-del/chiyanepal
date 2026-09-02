@@ -301,3 +301,52 @@ export const getDailySummary = createServerFn({ method: "POST" })
       totalRevenue: valid.reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
     };
   });
+
+export const getDailyOrdersHistory = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => input)
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner", "waiter"]);
+
+    // Fetch orders for the past 3 days
+    const days = [];
+    for (let i = 0; i < 3; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      const { data: orders, error } = await supabaseAdmin
+        .from("orders")
+        .select(
+          "id, created_at, total_amount, status, tables(table_number), order_items(item_name, quantity, price_at_order)",
+        )
+        .gte("created_at", date.toISOString())
+        .lt("created_at", nextDate.toISOString())
+        .is("cancelled_at", null)
+        .order("created_at", { ascending: false });
+
+      if (error) throw new Error(error.message);
+
+      const totalRevenue = (orders ?? []).reduce((sum, o) => sum + Number(o.total_amount ?? 0), 0);
+
+      days.push({
+        date: date.toISOString().split("T")[0],
+        displayDate: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
+        orderCount: orders?.length ?? 0,
+        totalRevenue,
+        orders: (orders ?? []).map((o) => ({
+          id: o.id,
+          time: new Date(o.created_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          tableNumber: (o.tables as any)?.table_number ?? "N/A",
+          amount: Number(o.total_amount ?? 0),
+          status: o.status,
+          items: (o.order_items as any) ?? [],
+        })),
+      });
+    }
+
+    return days;
+  });

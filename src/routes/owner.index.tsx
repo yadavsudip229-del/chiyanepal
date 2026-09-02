@@ -2,6 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { OrdersBoard } from "@/components/OrdersBoard";
 import { StaffShell } from "@/components/StaffShell";
 import { DailySummary } from "@/components/DailySummary";
+import { DailyOrdersHistory } from "@/components/DailyOrdersHistory";
 import { useStaffSession } from "@/lib/staff-client";
 export const Route = createFileRoute("/owner/")({
   ssr: false,
@@ -23,6 +24,7 @@ function OwnerDashboard() {
     <StaffShell session={session} title="Owner dashboard">
       <h1 className="mb-4 text-3xl">Live orders</h1>
       <DailySummary token={session.token} />
+      <DailyOrdersHistory token={session.token} />
       <OrdersBoard session={session} />
     </StaffShell>
   );
