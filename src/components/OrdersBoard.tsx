@@ -85,6 +85,29 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
     window.localStorage.setItem("chiya-alerts", JSON.stringify({ soundOn, soundId, notifyOn }));
   }, [soundOn, soundId, notifyOn]);
 
+  // Keep this device's push registration tied to the role that is signed in right now.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    void (async () => {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return;
+      if (!notifyOn) {
+        await disablePushOnThisDevice();
+        return;
+      }
+      const raw = subscription.toJSON();
+      await savePushSubscription({
+        data: {
+          token: session.token,
+          endpoint: raw.endpoint!,
+          p256dh: raw.keys!["p256dh"]!,
+          auth: raw.keys!["auth"]!,
+        },
+      }).catch(() => {});
+    })();
+  }, [notifyOn, session.token]);
+
   useOrderAlerts(data, soundOn, soundId, notifyOn);
 
   useEffect(() => {

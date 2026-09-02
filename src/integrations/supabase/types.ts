@@ -190,6 +190,7 @@ export type Database = {
           endpoint: string
           id: string
           p256dh: string
+          role: string
           staff_id: string
         }
         Insert: {
@@ -198,6 +199,7 @@ export type Database = {
           endpoint: string
           id?: string
           p256dh: string
+          role?: string
           staff_id: string
         }
         Update: {
@@ -206,6 +208,7 @@ export type Database = {
           endpoint?: string
           id?: string
           p256dh?: string
+          role?: string
           staff_id?: string
         }
         Relationships: [

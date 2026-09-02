@@ -82,7 +82,7 @@ export const resetPin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-/** Saves this device's push notification subscription for the signed-in staff member. */
+/** Saves this device's push notification subscription for the signed-in staff member and role. */
 export const savePushSubscription = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string; endpoint: string; p256dh: string; auth: string }) => input)
   .handler(async ({ data }) => {
@@ -92,9 +92,24 @@ export const savePushSubscription = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("push_subscriptions")
       .upsert(
-        { staff_id: claims.sid, endpoint: data.endpoint, p256dh: data.p256dh, auth: data.auth },
+        {
+          staff_id: claims.sid,
+          role: claims.role,
+          endpoint: data.endpoint,
+          p256dh: data.p256dh,
+          auth: data.auth,
+        },
         { onConflict: "endpoint" }
       );
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Removes this device's push subscription (used on sign-out or when alerts are turned off). */
+export const removePushSubscription = createServerFn({ method: "POST" })
+  .inputValidator((input: { endpoint: string }) => input)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("push_subscriptions").delete().eq("endpoint", data.endpoint);
     return { ok: true };
   });
