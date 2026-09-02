@@ -12,7 +12,7 @@ export const placeOrder = createServerFn({ method: "POST" })
 
     const { data: table, error: tableError } = await supabaseAdmin
       .from("tables")
-      .select("id")
+      .select("id,table_number")
       .eq("qr_token", data.tableToken)
       .maybeSingle();
     if (tableError) throw new Error(tableError.message);
@@ -58,8 +58,15 @@ export const placeOrder = createServerFn({ method: "POST" })
       .from("order_items")
       .insert(rows.map((r) => ({ ...r, order_id: order.id })));
     if (linesError) throw new Error(linesError.message);
+    const { sendPushToAllStaff } = await import("./push.server");
+    await sendPushToAllStaff({
+      title: "New order",
+      body: `Table ${table.table_number} placed an order — Rs. ${total}`,
+      url: "/owner",
+    }).catch(() => {});
 
     return { orderId: order.id as string, total };
+    
   });
 
 export const raiseRedFlag = createServerFn({ method: "POST" })
@@ -69,7 +76,7 @@ export const raiseRedFlag = createServerFn({ method: "POST" })
 
     const { data: table } = await supabaseAdmin
       .from("tables")
-      .select("id")
+      .select("id,table_number")
       .eq("qr_token", data.tableToken)
       .maybeSingle();
     if (!table) throw new Error("Unknown table");
@@ -93,7 +100,15 @@ export const raiseRedFlag = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin
       .from("red_flags")
       .insert({ order_id: order.id, table_id: table.id, status: "open" });
-    if (error) throw new Error(error.message);
+        if (error) throw new Error(error.message);
+
+    const { sendPushToAllStaff } = await import("./push.server");
+    await sendPushToAllStaff({
+      title: "Customer needs help",
+      body: `Table ${table.table_number} raised a flag`,
+      url: "/owner",
+    }).catch(() => {});
+
     return { ok: true, alreadyOpen: false };
   });
 
