@@ -14,7 +14,7 @@ import {
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
-import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
+import { markOrderServed, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
 import type { StaffSession } from "@/lib/staff-client";
 import { savePushSubscription } from "@/lib/staff.functions";
 import { disablePushOnThisDevice } from "@/lib/push-client";
@@ -410,25 +410,21 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                       Resolve flag
                     </Button>
                   )}
-                  {order.payment_status !== "paid" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busy === order.id}
-                      onClick={() =>
-                        run(
-                          order.id,
-                          () =>
-                            markPaid({
-                              data: { token: session.token, orderId: order.id, method: "cash" },
-                            }),
-                          "Payment recorded",
-                        )
-                      }
-                    >
-                      <BanknoteIcon className="mr-1 size-4" /> Paid at counter
-                    </Button>
-                  )}
+                 <Button
+  variant="destructive"
+  size="sm"
+  onClick={async () => {
+    if (!confirm("Cancel this order? This can't be undone.")) return;
+    try {
+      await cancelOrderAsStaff({ data: { token: session.token, orderId: order.id } });
+      toast.success("Order cancelled");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not cancel order");
+    }
+  }}
+>
+  Cancel order
+</Button>
                 </div>
               </div>
             </div>
