@@ -161,3 +161,4 @@
 @utility animate-urgent {
   animation: urgent-pulse 1.4s ease-out infinite;
 }
+#lovable-badge { display: none !important; }
