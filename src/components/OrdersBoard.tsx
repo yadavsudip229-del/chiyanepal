@@ -17,6 +17,7 @@ import {
 import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
 import type { StaffSession } from "@/lib/staff-client";
 import { savePushSubscription } from "@/lib/staff.functions";
+import { disablePushOnThisDevice } from "@/lib/push-client";
 
 const VAPID_PUBLIC_KEY = "BNASDuCMRo9Bc8iNOmrbeZMdjZ9yl--8hiRHwrR9IMkU5j-qFsX2tnGPgKMNXgzYtqqnrO78uWHFlHEp_5rgGkI";
 
