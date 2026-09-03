@@ -132,10 +132,16 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
     }
   };
 
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  const isStale = (o: BoardOrder) => now - new Date(o.created_at).getTime() > ONE_HOUR_MS;
   const active = (data ?? [])
-    .filter((o) => o.status !== "served" && o.status !== "cancelled")
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && !isStale(o))
     // Oldest order stays first; new orders queue up after it.
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  // Orders untouched for over an hour leave the active grid automatically.
+  const autoArchived = (data ?? [])
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && isStale(o))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const served = (data ?? []).filter((o) => o.status === "served");
   const cancelled = (data ?? []).filter((o) => o.status === "cancelled");
 
@@ -441,6 +447,31 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                 </span>{" "}
                 · cancelled ·{" "}
                 {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hideServed && autoArchived.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-lg">Auto-archived (over 1 hour)</h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {autoArchived.slice(0, 12).map((order) => (
+              <div
+                key={order.id}
+                className="rounded-xl border border-muted-foreground/30 bg-muted p-3 text-sm opacity-80"
+              >
+                <div className="flex justify-between">
+                  <span className="font-semibold">Table {order.tables?.table_number ?? "?"}</span>
+                  <span>Rs. {Number(order.total_amount).toFixed(0)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Moved here automatically after 1 hour · Payment: {order.payment_status}
+                </p>
               </div>
             ))}
           </div>
