@@ -14,7 +14,13 @@ import {
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
-import { markOrderServed, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
+import {
+  cancelOrderAsStaff,
+  markOrderServed,
+  resolveRedFlag,
+  respondTimeRequest,
+  setOrderEta,
+} from "@/lib/orders.functions";
 import { handleStaffSessionError, type StaffSession } from "@/lib/staff-client";
 import { savePushSubscription } from "@/lib/staff.functions";
 import { disablePushOnThisDevice } from "@/lib/push-client";
