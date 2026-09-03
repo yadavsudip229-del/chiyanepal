@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { getDailyOrdersHistory } from "@/lib/orders.functions";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface OrderItem {
@@ -76,50 +74,47 @@ export function DailyOrdersHistory({ token }: { token: string }) {
   return (
     <div className="mb-6">
       <h2 className="mb-4 text-xl font-semibold">Order History (10 Days)</h2>
-      <Accordion type="single" collapsible className="w-full">
+      <div className="space-y-6">
         {days.map((day) => (
-          <AccordionItem key={day.date} value={day.date}>
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex w-full items-center justify-between pr-4">
-                <div className="flex flex-col items-start">
-                  <div className="font-medium">{day.displayDate}</div>
-                  <div className="text-sm text-muted-foreground">{day.orderCount} orders</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">Rs. {day.totalRevenue.toFixed(0)}</div>
-                </div>
+          <section key={day.date} className="card-surface p-4">
+            <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+              <div className="mr-auto">
+                <h3 className="text-2xl">{day.displayDate}</h3>
+                <p className="text-sm text-muted-foreground">{day.orderCount} orders</p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-3">
-                {day.orders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No orders for this day</p>
-                ) : (
-                  day.orders.map((order) => (
-                    <Card key={order.id} className="p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="font-medium">Table {order.tableNumber}</div>
-                          <Badge variant="outline">{order.time}</Badge>
-                          <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Revenue</p>
+                <p className="font-semibold">Rs. {day.totalRevenue.toFixed(0)}</p>
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              {day.orders.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No orders for this day</p>
+              ) : (
+                day.orders.map((order) => (
+                  <div key={order.id} className="rounded-lg border p-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="font-medium">Table {order.tableNumber}</div>
+                        <Badge variant="outline">{order.time}</Badge>
+                        <Badge className={getStatusColor(order.status)}>{order.status}</Badge>
+                      </div>
+                      <div className="font-semibold">Rs. {order.amount.toFixed(0)}</div>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="ml-4">
+                          - {item.item_name} x{item.quantity} @ Rs. {item.price_at_order}
                         </div>
-                        <div className="font-semibold">Rs. {order.amount.toFixed(0)}</div>
-                      </div>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="ml-4">
-                            • {item.item_name} x{item.quantity} @ Rs. {item.price_at_order}
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         ))}
-      </Accordion>
+      </div>
     </div>
   );
 }
