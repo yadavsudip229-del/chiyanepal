@@ -65,21 +65,24 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
   const [soundOn, setSoundOn] = useState(true);
   const [soundId, setSoundId] = useState<SoundId>("chime");
   const [notifyOn, setNotifyOn] = useState(false);
+  const [alertsLoaded, setAlertsLoaded] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [customEta, setCustomEta] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("chiya-alerts");
-    if (!saved) return;
-    try {
-      const p = JSON.parse(saved) as { soundOn?: boolean; soundId?: SoundId; notifyOn?: boolean };
-      if (typeof p.soundOn === "boolean") setSoundOn(p.soundOn);
-      if (p.soundId) setSoundId(p.soundId);
-      if (typeof p.notifyOn === "boolean") setNotifyOn(p.notifyOn);
-    } catch {
-      /* ignore */
+    if (saved) {
+      try {
+        const p = JSON.parse(saved) as { soundOn?: boolean; soundId?: SoundId; notifyOn?: boolean };
+        if (typeof p.soundOn === "boolean") setSoundOn(p.soundOn);
+        if (p.soundId) setSoundId(p.soundId);
+        if (typeof p.notifyOn === "boolean") setNotifyOn(p.notifyOn);
+      } catch {
+        /* ignore */
+      }
     }
+    setAlertsLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -88,8 +91,14 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
 
   // Keep this device's push registration tied to the role that is signed in right now.
   useEffect(() => {
+    if (!alertsLoaded) return;
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     void (async () => {
+      if (!isOwner) {
+        setNotifyOn(false);
+        await disablePushOnThisDevice();
+        return;
+      }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (!subscription) return;
@@ -107,9 +116,9 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
         },
       }).catch(() => {});
     })();
-  }, [notifyOn, session.token]);
+  }, [alertsLoaded, isOwner, notifyOn, session.token]);
 
-  useOrderAlerts(data, soundOn, soundId, notifyOn);
+  useOrderAlerts(data, soundOn, soundId, isOwner && notifyOn);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -168,7 +177,7 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
           <Button variant="outline" size="sm" onClick={() => playPreview(soundId)}>
             Test
           </Button>
-          <Button
+          {isOwner && <Button
             variant={notifyOn ? "default" : "outline"}
             size="sm"
                       onClick={async () => {
@@ -211,7 +220,7 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
             }}
           >
             Notifications {notifyOn ? "on" : "off"}
-          </Button>
+          </Button>}
         </div>
       </div>
 
