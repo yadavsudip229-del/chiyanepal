@@ -132,10 +132,16 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
     }
   };
 
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  const isStale = (o: BoardOrder) => now - new Date(o.created_at).getTime() > ONE_HOUR_MS;
   const active = (data ?? [])
-    .filter((o) => o.status !== "served" && o.status !== "cancelled")
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && !isStale(o))
     // Oldest order stays first; new orders queue up after it.
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  // Orders untouched for over an hour leave the active grid automatically.
+  const autoArchived = (data ?? [])
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && isStale(o))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const served = (data ?? []).filter((o) => o.status === "served");
   const cancelled = (data ?? []).filter((o) => o.status === "cancelled");
 
