@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getDailySummary } from "@/lib/orders.functions";
+import { handleStaffSessionError } from "@/lib/staff-client";
 
 export function DailySummary({ token }: { token: string }) {
   const [summary, setSummary] = useState<{ orderCount: number; totalRevenue: number } | null>(null);
@@ -10,7 +11,8 @@ export function DailySummary({ token }: { token: string }) {
     try {
       const result = await getDailySummary({ data: { token } });
       setSummary(result);
-    } catch {
+    } catch (error) {
+      handleStaffSessionError(error);
       setSummary(null);
     } finally {
       setLoading(false);
@@ -21,7 +23,7 @@ export function DailySummary({ token }: { token: string }) {
     load();
     const interval = setInterval(load, 60000); // auto-refresh every minute
     return () => clearInterval(interval);
-  }, []);
+  }, [token]);
 
   return (
     <div className="mb-6 flex gap-6 rounded-lg border p-4">

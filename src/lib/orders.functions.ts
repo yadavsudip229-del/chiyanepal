@@ -240,17 +240,24 @@ export const cancelOrder = createServerFn({ method: "POST" })
       .eq("status", "open");
     return { ok: true };
   });
-export const cancelOrder = createServerFn({ method: "POST" })
-  .inputValidator((input: { orderId: string; tableToken: string }) => input)
-  .handler(async ({ data }) => {
-    ...
-    return { ok: true };
-  });
 
 export const cancelOrderAsStaff = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string; orderId: string }) => input)
   .handler(async ({ data }) => {
-    ...
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner", "waiter"]);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+      .eq("id", data.orderId)
+      .neq("status", "served");
+    if (error) throw new Error(error.message);
+    await supabaseAdmin
+      .from("red_flags")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("order_id", data.orderId)
+      .eq("status", "open");
     return { ok: true };
   });
 

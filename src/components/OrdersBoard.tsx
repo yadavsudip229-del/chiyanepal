@@ -14,8 +14,14 @@ import {
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
-import { markOrderServed, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
-import type { StaffSession } from "@/lib/staff-client";
+import {
+  cancelOrderAsStaff,
+  markOrderServed,
+  resolveRedFlag,
+  respondTimeRequest,
+  setOrderEta,
+} from "@/lib/orders.functions";
+import { handleStaffSessionError, type StaffSession } from "@/lib/staff-client";
 import { savePushSubscription } from "@/lib/staff.functions";
 import { disablePushOnThisDevice } from "@/lib/push-client";
 
@@ -126,6 +132,7 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
       toast.success(message);
       await refresh();
     } catch (err) {
+      handleStaffSessionError(err);
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(null);
