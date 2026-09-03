@@ -14,8 +14,14 @@ import {
   useLiveBoard,
   useOrderAlerts,
 } from "@/lib/live-orders";
-import { markOrderServed, markPaid, resolveRedFlag, respondTimeRequest, setOrderEta } from "@/lib/orders.functions";
-import type { StaffSession } from "@/lib/staff-client";
+import {
+  cancelOrderAsStaff,
+  markOrderServed,
+  resolveRedFlag,
+  respondTimeRequest,
+  setOrderEta,
+} from "@/lib/orders.functions";
+import { handleStaffSessionError, type StaffSession } from "@/lib/staff-client";
 import { savePushSubscription } from "@/lib/staff.functions";
 import { disablePushOnThisDevice } from "@/lib/push-client";
 
@@ -135,16 +141,23 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
       toast.success(message);
       await refresh();
     } catch (err) {
+      handleStaffSessionError(err);
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(null);
     }
   };
 
+  const ONE_HOUR_MS = 60 * 60 * 1000;
+  const isStale = (o: BoardOrder) => now - new Date(o.created_at).getTime() > ONE_HOUR_MS;
   const active = (data ?? [])
-    .filter((o) => o.status !== "served" && o.status !== "cancelled")
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && !isStale(o))
     // Oldest order stays first; new orders queue up after it.
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  // Orders untouched for over an hour leave the active grid automatically.
+  const autoArchived = (data ?? [])
+    .filter((o) => o.status !== "served" && o.status !== "cancelled" && isStale(o))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   const served = (data ?? []).filter((o) => o.status === "served");
   const cancelled = (data ?? []).filter((o) => o.status === "cancelled");
 
@@ -413,25 +426,21 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                       Resolve flag
                     </Button>
                   )}
-                  {order.payment_status !== "paid" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={busy === order.id}
-                      onClick={() =>
-                        run(
-                          order.id,
-                          () =>
-                            markPaid({
-                              data: { token: session.token, orderId: order.id, method: "cash" },
-                            }),
-                          "Payment recorded",
-                        )
-                      }
-                    >
-                      <BanknoteIcon className="mr-1 size-4" /> Paid at counter
-                    </Button>
-                  )}
+                 <Button
+  variant="destructive"
+  size="sm"
+  onClick={async () => {
+    if (!confirm("Cancel this order? This can't be undone.")) return;
+    try {
+      await cancelOrderAsStaff({ data: { token: session.token, orderId: order.id } });
+      toast.success("Order cancelled");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not cancel order");
+    }
+  }}
+>
+  Cancel order
+</Button>
                 </div>
               </div>
             </div>
@@ -450,6 +459,31 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                 </span>{" "}
                 · cancelled ·{" "}
                 {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hideServed && autoArchived.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-lg">Auto-archived (over 1 hour)</h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {autoArchived.slice(0, 12).map((order) => (
+              <div
+                key={order.id}
+                className="rounded-xl border border-muted-foreground/30 bg-muted p-3 text-sm opacity-80"
+              >
+                <div className="flex justify-between">
+                  <span className="font-semibold">Table {order.tables?.table_number ?? "?"}</span>
+                  <span>Rs. {Number(order.total_amount).toFixed(0)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Moved here automatically after 1 hour · Payment: {order.payment_status}
+                </p>
               </div>
             ))}
           </div>

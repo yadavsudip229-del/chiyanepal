@@ -146,19 +146,7 @@ export const markOrderServed = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const markPaid = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string; orderId: string; method: "cash" | "card" }) => input)
-  .handler(async ({ data }) => {
-    const { requireRole } = await import("./staff-session.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    requireRole(data.token, ["owner", "waiter"]);
-    const { error } = await supabaseAdmin
-      .from("orders")
-      .update({ payment_status: "paid", payment_method: data.method })
-      .eq("id", data.orderId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+
 
 export const resolveRedFlag = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string; flagId: string }) => input)
@@ -249,6 +237,26 @@ export const cancelOrder = createServerFn({ method: "POST" })
       .from("red_flags")
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
       .eq("order_id", order.id)
+      .eq("status", "open");
+    return { ok: true };
+  });
+
+export const cancelOrderAsStaff = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string; orderId: string }) => input)
+  .handler(async ({ data }) => {
+    const { requireRole } = await import("./staff-session.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    requireRole(data.token, ["owner", "waiter"]);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
+      .eq("id", data.orderId)
+      .neq("status", "served");
+    if (error) throw new Error(error.message);
+    await supabaseAdmin
+      .from("red_flags")
+      .update({ status: "resolved", resolved_at: new Date().toISOString() })
+      .eq("order_id", data.orderId)
       .eq("status", "open");
     return { ok: true };
   });
