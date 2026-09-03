@@ -453,6 +453,31 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
         </div>
       )}
 
+      {!hideServed && autoArchived.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-lg">Auto-archived (over 1 hour)</h2>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {autoArchived.slice(0, 12).map((order) => (
+              <div
+                key={order.id}
+                className="rounded-xl border border-muted-foreground/30 bg-muted p-3 text-sm opacity-80"
+              >
+                <div className="flex justify-between">
+                  <span className="font-semibold">Table {order.tables?.table_number ?? "?"}</span>
+                  <span>Rs. {Number(order.total_amount).toFixed(0)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {order.order_items.map((i) => `${i.quantity}× ${i.item_name}`).join(", ")}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Moved here automatically after 1 hour · Payment: {order.payment_status}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
           {isOwner && !hideServed && served.length > 0 && (
         <div>
           <h2 className="mb-3 text-lg">Served today</h2>
