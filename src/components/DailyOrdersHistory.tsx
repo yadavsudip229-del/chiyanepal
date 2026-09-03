@@ -75,7 +75,7 @@ export function DailyOrdersHistory({ token }: { token: string }) {
 
   return (
     <div className="mb-6">
-      <h2 className="mb-4 text-xl font-semibold">Order History (3 Days)</h2>
+      <h2 className="mb-4 text-xl font-semibold">Order History (10 Days)</h2>
       <Accordion type="single" collapsible className="w-full">
         {days.map((day) => (
           <AccordionItem key={day.date} value={day.date}>

@@ -309,9 +309,9 @@ export const getDailyOrdersHistory = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     requireRole(data.token, ["owner", "waiter"]);
 
-    // Fetch orders for the past 3 days
+    // Fetch orders for the past 10 days
     const days = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 10; i++) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
