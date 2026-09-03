@@ -333,7 +333,7 @@ export const getDailyOrdersHistory = createServerFn({ method: "POST" })
       const totalRevenue = (orders ?? []).reduce((sum, o) => sum + Number(o.total_amount ?? 0), 0);
 
       days.push({
-        date: date.toISOString().split("T")[0],
+        date: date.toISOString().slice(0, 10),
         displayDate: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }),
         orderCount: orders?.length ?? 0,
         totalRevenue,
