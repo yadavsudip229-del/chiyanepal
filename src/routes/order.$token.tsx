@@ -142,6 +142,21 @@ function CustomerOrderPage() {
     };
   }, [orderId, queryClient]);
 
+  // Decide which tab to land on once the stored order is loaded:
+  // fresh order (within 4 hours) -> "My Order"; stale/missing -> treat as new customer on "Menu".
+  useEffect(() => {
+    if (!orderId || orderQuery.data === undefined) return;
+    const order = orderQuery.data;
+    const stale = !order || Date.now() - new Date(order.created_at).getTime() > 4 * 60 * 60 * 1000;
+    if (stale) {
+      window.localStorage.removeItem(storageKey);
+      setOrderId(null);
+      setTab("menu");
+    } else {
+      setTab("order");
+    }
+  }, [orderId, orderQuery.data, storageKey]);
+
   const items = menuQuery.data?.items ?? [];
   const cartLines = useMemo(
     () =>
