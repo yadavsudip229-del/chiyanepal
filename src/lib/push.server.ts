@@ -12,14 +12,9 @@ export async function sendPushToAllStaff(payload: { title: string; body: string;
     vapidPrivateKey,
   );
 
-  const { data: owners } = await supabaseAdmin.from("staff").select("id").eq("role", "owner");
-  const ownerIds = (owners ?? []).map((owner) => owner.id);
-  if (ownerIds.length === 0) return;
-
   const { data: subs } = await supabaseAdmin
     .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth")
-    .in("staff_id", ownerIds);
+    .select("id, endpoint, p256dh, auth, role");
   if (!subs || subs.length === 0) return;
 
   await Promise.all(
@@ -27,7 +22,10 @@ export async function sendPushToAllStaff(payload: { title: string; body: string;
       try {
         await webpush.default.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({ ...payload, url: payload.url ?? "/owner" }),
+          JSON.stringify({
+            ...payload,
+            url: sub.role === "waiter" ? "/waiter" : (payload.url ?? "/owner"),
+          }),
         );
       } catch (err: unknown) {
         const statusCode =
