@@ -300,13 +300,13 @@ export const getDailySummary = createServerFn({ method: "POST" })
     start.setHours(0, 0, 0, 0);
     const { data: rows, error } = await supabaseAdmin
       .from("orders")
-      .select("total_amount, cancelled_at")
-      .gte("created_at", start.toISOString());
+      .select("total_amount, status")
+      .gte("created_at", start.toISOString())
+      .eq("status", "served");
     if (error) throw new Error(error.message);
-    const valid = (rows ?? []).filter((r) => !r.cancelled_at);
     return {
-      orderCount: valid.length,
-      totalRevenue: valid.reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
+      orderCount: (rows ?? []).length,
+      totalRevenue: (rows ?? []).reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
     };
   });
 
