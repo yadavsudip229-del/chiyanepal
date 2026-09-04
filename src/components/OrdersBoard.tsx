@@ -100,11 +100,6 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
     if (!alertsLoaded) return;
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     void (async () => {
-      if (!isOwner) {
-        setNotifyOn(false);
-        await disablePushOnThisDevice();
-        return;
-      }
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
       if (!subscription) return;
@@ -122,9 +117,9 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
         },
       }).catch(() => {});
     })();
-  }, [alertsLoaded, isOwner, notifyOn, session.token]);
+  }, [alertsLoaded, notifyOn, session.token]);
 
-  useOrderAlerts(data, soundOn, soundId, isOwner && notifyOn);
+  useOrderAlerts(data, soundOn, soundId, notifyOn);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -190,7 +185,7 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
           <Button variant="outline" size="sm" onClick={() => playPreview(soundId)}>
             Test
           </Button>
-          {isOwner && <Button
+          <Button
             variant={notifyOn ? "default" : "outline"}
             size="sm"
                       onClick={async () => {
@@ -233,7 +228,7 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
             }}
           >
             Notifications {notifyOn ? "on" : "off"}
-          </Button>}
+          </Button>
         </div>
       </div>
 
