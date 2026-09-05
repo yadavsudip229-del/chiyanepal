@@ -370,24 +370,70 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
                         {m}m
                       </Button>
                     ))}
-                    <Input
-                      className="h-8 w-20"
-                      inputMode="numeric"
-                      placeholder="min"
-                      value={customEta[order.id] ?? ""}
-                      onChange={(e) => setCustomEta((c) => ({ ...c, [order.id]: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key !== "Enter") return;
-                        const minutes = Number(customEta[order.id]);
-                        if (!minutes) return;
-                        void run(
-                          order.id,
-                          () =>
-                            setOrderEta({ data: { token: session.token, orderId: order.id, minutes } }),
-                          `ETA set to ${minutes} min`,
-                        );
-                      }}
-                    />
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        aria-label="Decrease minutes"
+                        onClick={() =>
+                          setCustomEta((c) => {
+                            const current = Number(c[order.id] ?? order.eta_minutes ?? 10) || 10;
+                            return { ...c, [order.id]: String(Math.max(1, current - 5)) };
+                          })
+                        }
+                      >
+                        −
+                      </Button>
+                      <Input
+                        className="h-8 w-16 text-center"
+                        inputMode="numeric"
+                        placeholder="min"
+                        value={customEta[order.id] ?? ""}
+                        onChange={(e) => setCustomEta((c) => ({ ...c, [order.id]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          const minutes = Number(customEta[order.id]);
+                          if (!minutes) return;
+                          void run(
+                            order.id,
+                            () =>
+                              setOrderEta({ data: { token: session.token, orderId: order.id, minutes } }),
+                            `ETA set to ${minutes} min`,
+                          );
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        aria-label="Increase minutes"
+                        onClick={() =>
+                          setCustomEta((c) => {
+                            const current = Number(c[order.id] ?? order.eta_minutes ?? 0) || 0;
+                            return { ...c, [order.id]: String(Math.min(240, current + 5)) };
+                          })
+                        }
+                      >
+                        +
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={busy === order.id || !Number(customEta[order.id])}
+                        onClick={() => {
+                          const minutes = Number(customEta[order.id]);
+                          if (!minutes) return;
+                          void run(
+                            order.id,
+                            () =>
+                              setOrderEta({ data: { token: session.token, orderId: order.id, minutes } }),
+                            `ETA set to ${minutes} min`,
+                          );
+                        }}
+                      >
+                        Set
+                      </Button>
+                    </div>
                   </div>
                 )}
 

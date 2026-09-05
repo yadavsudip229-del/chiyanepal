@@ -166,7 +166,7 @@ async function loadGuestOrder(orderId: string, tableToken: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: table } = await supabaseAdmin
     .from("tables")
-    .select("id")
+    .select("id, table_number")
     .eq("qr_token", tableToken)
     .maybeSingle();
   if (!table) throw new Error("Unknown table");
@@ -177,13 +177,13 @@ async function loadGuestOrder(orderId: string, tableToken: string) {
     .eq("table_id", table.id)
     .maybeSingle();
   if (!order) throw new Error("Order not found");
-  return { supabaseAdmin, order };
+  return { supabaseAdmin, order, table };
 }
 
 export const updateOrderItems = createServerFn({ method: "POST" })
   .inputValidator((input: { orderId: string; tableToken: string; items: CartLine[]; note?: string | undefined }) => input)
   .handler(async ({ data }) => {
-    const { supabaseAdmin, order } = await loadGuestOrder(data.orderId, data.tableToken);
+    const { supabaseAdmin, order, table } = await loadGuestOrder(data.orderId, data.tableToken);
     if (order.status === "served" || order.status === "cancelled")
       throw new Error("This order can no longer be changed");
 
@@ -220,13 +220,19 @@ export const updateOrderItems = createServerFn({ method: "POST" })
       .update({ total_amount: total, note: data.note?.slice(0, 300) ?? null })
       .eq("id", order.id);
     if (error) throw new Error(error.message);
+    const { sendPushToAllStaff } = await import("./push.server");
+    await sendPushToAllStaff({
+      title: "Order changed",
+      body: `Table ${table.table_number} edited their order — new total Rs. ${total}`,
+      url: "/owner",
+    }).catch(() => {});
     return { ok: true, total };
   });
 
 export const cancelOrder = createServerFn({ method: "POST" })
   .inputValidator((input: { orderId: string; tableToken: string }) => input)
   .handler(async ({ data }) => {
-    const { supabaseAdmin, order } = await loadGuestOrder(data.orderId, data.tableToken);
+    const { supabaseAdmin, order, table } = await loadGuestOrder(data.orderId, data.tableToken);
     if (order.status === "served") throw new Error("This order was already served");
     const { error } = await supabaseAdmin
       .from("orders")
@@ -238,6 +244,12 @@ export const cancelOrder = createServerFn({ method: "POST" })
       .update({ status: "resolved", resolved_at: new Date().toISOString() })
       .eq("order_id", order.id)
       .eq("status", "open");
+    const { sendPushToAllStaff } = await import("./push.server");
+    await sendPushToAllStaff({
+      title: "Order cancelled",
+      body: `Table ${table.table_number} cancelled their order`,
+      url: "/owner",
+    }).catch(() => {});
     return { ok: true };
   });
 
@@ -264,7 +276,7 @@ export const cancelOrderAsStaff = createServerFn({ method: "POST" })
 export const requestTimeLimit = createServerFn({ method: "POST" })
   .inputValidator((input: { orderId: string; tableToken: string; minutes: number }) => input)
   .handler(async ({ data }) => {
-    const { supabaseAdmin, order } = await loadGuestOrder(data.orderId, data.tableToken);
+    const { supabaseAdmin, order, table } = await loadGuestOrder(data.orderId, data.tableToken);
     if (order.status === "served" || order.status === "cancelled")
       throw new Error("This order is already finished");
     const minutes = Math.min(Math.max(1, Math.round(data.minutes)), 240);
@@ -273,6 +285,12 @@ export const requestTimeLimit = createServerFn({ method: "POST" })
       .update({ time_request_minutes: minutes, time_request_at: new Date().toISOString(), time_response: null })
       .eq("id", order.id);
     if (error) throw new Error(error.message);
+    const { sendPushToAllStaff } = await import("./push.server");
+    await sendPushToAllStaff({
+      title: "Time request",
+      body: `Table ${table.table_number} can only wait ${minutes} min`,
+      url: "/owner",
+    }).catch(() => {});
     return { ok: true };
   });
 
