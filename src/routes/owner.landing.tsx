@@ -17,9 +17,9 @@ export const Route = createFileRoute("/owner/landing")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Landing Page Editor — Chiya Ghar" },
+      { title: "Landing Page Editor — Chiya" },
       { name: "description", content: "Change the shop name, tagline and background photo shown on your public landing page." },
-      { property: "og:title", content: "Landing Page Editor — Chiya Ghar" },
+      { property: "og:title", content: "Landing Page Editor — Chiya" },
       { property: "og:description", content: "Edit your shop name, tagline and hero photo." },
     ],
   }),

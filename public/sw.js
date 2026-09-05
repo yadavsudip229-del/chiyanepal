@@ -17,10 +17,10 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch (e) {
-    data = { title: "Chiya Ghar", body: event.data ? event.data.text() : "New update" };
+    data = { title: "Chiya", body: event.data ? event.data.text() : "New update" };
   }
 
-  const title = data.title || "Chiya Ghar";
+  const title = data.title || "Chiya";
   const options = {
     body: data.body || "You have a new update.",
     icon: "/icon-192.png",

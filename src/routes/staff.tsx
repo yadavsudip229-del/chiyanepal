@@ -10,10 +10,10 @@ export const Route = createFileRoute("/staff")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Staff Sign In — Chiya Ghar" },
-      { name: "description", content: "Owner and waiter PIN sign-in for the Chiya Ghar table ordering system." },
-      { property: "og:title", content: "Staff Sign In — Chiya Ghar" },
-      { property: "og:description", content: "Owner and waiter PIN sign-in for Chiya Ghar." },
+      { title: "Staff Sign In — Chiya" },
+      { name: "description", content: "Owner and waiter PIN sign-in for the Chiya table ordering system." },
+      { property: "og:title", content: "Staff Sign In — Chiya" },
+      { property: "og:description", content: "Owner and waiter PIN sign-in for Chiya." },
     ],
   }),
   component: StaffLoginPage,
@@ -61,7 +61,7 @@ function StaffLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <form onSubmit={submit} className="card-surface w-full max-w-sm p-8">
-        <h1 className="text-3xl">Chiya Ghar</h1>
+        <h1 className="text-3xl">Chiya</h1>
         <p className="mt-1 text-sm text-muted-foreground">Enter your staff PIN to continue.</p>
         <Input
           className="mt-6 h-14 text-center text-2xl tracking-[0.5em]"

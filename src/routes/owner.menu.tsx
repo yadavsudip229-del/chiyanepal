@@ -20,10 +20,10 @@ export const Route = createFileRoute("/owner/menu")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Menu Manager — Chiya Ghar" },
-      { name: "description", content: "Add, edit and remove Chiya Ghar categories and menu items." },
-      { property: "og:title", content: "Menu Manager — Chiya Ghar" },
-      { property: "og:description", content: "Manage the Chiya Ghar menu." },
+      { title: "Menu Manager — Chiya" },
+      { name: "description", content: "Add, edit and remove Chiya categories and menu items." },
+      { property: "og:title", content: "Menu Manager — Chiya" },
+      { property: "og:description", content: "Manage the Chiya menu." },
     ],
   }),
   component: MenuManager,

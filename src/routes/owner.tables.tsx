@@ -15,9 +15,9 @@ export const Route = createFileRoute("/owner/tables")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Tables & QR Codes — Chiya Ghar" },
-      { name: "description", content: "Create tables and print WiFi and menu QR codes for each Chiya Ghar table." },
-      { property: "og:title", content: "Tables & QR Codes — Chiya Ghar" },
+      { title: "Tables & QR Codes — Chiya" },
+      { name: "description", content: "Create tables and print WiFi and menu QR codes for each Chiya table." },
+      { property: "og:title", content: "Tables & QR Codes — Chiya" },
       { property: "og:description", content: "Print WiFi and menu QR codes for each table." },
     ],
   }),

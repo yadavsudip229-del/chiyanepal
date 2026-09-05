@@ -1,7 +1,7 @@
 {
   "name": "Chiya Staff",
   "short_name": "Chiya",
-  "description": "Owner and waiter ordering dashboard for Chiya Ghar.",
+  "description": "Owner and waiter ordering dashboard for Chiya.",
   "start_url": "/staff",
   "scope": "/",
   "display": "standalone",

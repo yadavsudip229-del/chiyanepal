@@ -21,13 +21,13 @@ export const Route = createFileRoute("/order/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Order at your table — Chiya Ghar" },
+      { title: "Order at your table — Chiya" },
       {
         name: "description",
-        content: "Scan, browse the Chiya Ghar menu and order chiya, coffee and snacks straight from your table.",
+        content: "Scan, browse the Chiya menu and order chiya, coffee and snacks straight from your table.",
       },
-      { property: "og:title", content: "Order at your table — Chiya Ghar" },
-      { property: "og:description", content: "Order chiya, coffee and snacks from your table at Chiya Ghar." },
+      { property: "og:title", content: "Order at your table — Chiya" },
+      { property: "og:description", content: "Order chiya, coffee and snacks from your table at Chiya." },
     ],
   }),
   component: CustomerOrderPage,
@@ -283,7 +283,7 @@ function CustomerOrderPage() {
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 flex flex-col justify-end bg-foreground/45 p-4">
-          <h1 className="font-display text-3xl text-background">{shopQuery.data?.shop_name ?? "Chiya Ghar"}</h1>
+          <h1 className="font-display text-3xl text-background">{shopQuery.data?.shop_name ?? "Chiya"}</h1>
           <p className="text-sm text-background/85">Table {tableQuery.data.table_number}</p>
         </div>
       </div>

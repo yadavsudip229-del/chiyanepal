@@ -7,10 +7,10 @@ export const Route = createFileRoute("/waiter")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Waiter Dashboard — Chiya Ghar" },
+      { title: "Waiter Dashboard — Chiya" },
       { name: "description", content: "Live order list for waiters: mark orders served and resolve customer alerts." },
-      { property: "og:title", content: "Waiter Dashboard — Chiya Ghar" },
-      { property: "og:description", content: "Live order list for Chiya Ghar waiters." },
+      { property: "og:title", content: "Waiter Dashboard — Chiya" },
+      { property: "og:description", content: "Live order list for Chiya waiters." },
     ],
   }),
   component: WaiterDashboard,

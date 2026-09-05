@@ -21,7 +21,7 @@ export function StaffShell({
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3">
           <div className="mr-auto">
-            <p className="font-display text-xl leading-tight">Chiya Ghar</p>
+            <p className="font-display text-xl leading-tight">Chiya</p>
             <p className="text-xs text-muted-foreground">
               {title} · signed in as {session.name}
             </p>
