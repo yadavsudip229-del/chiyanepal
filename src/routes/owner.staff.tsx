@@ -11,9 +11,9 @@ export const Route = createFileRoute("/owner/staff")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Staff PINs — Chiya Ghar" },
-      { name: "description", content: "Set or reset the shared owner and waiter PINs for Chiya Ghar staff sign-in." },
-      { property: "og:title", content: "Staff PINs — Chiya Ghar" },
+      { title: "Staff PINs — Chiya" },
+      { name: "description", content: "Set or reset the shared owner and waiter PINs for Chiya staff sign-in." },
+      { property: "og:title", content: "Staff PINs — Chiya" },
       { property: "og:description", content: "Manage owner and waiter sign-in PINs." },
     ],
   }),

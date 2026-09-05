@@ -7,7 +7,7 @@ import heroImage from "@/assets/chiya-hero.jpg";
 export const Route = createFileRoute("/")({
   loader: () => getPublicShopSettings(),
   head: ({ loaderData }) => {
-    const name = loaderData?.shop_name || "Chiya Ghar";
+    const name = loaderData?.shop_name || "Chiya";
     const description =
       loaderData?.tagline ||
       "Guests scan the QR at their table, order chiya and snacks, and watch their order status live.";
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const settings = Route.useLoaderData();
-  const shopName = settings?.shop_name || "Chiya Ghar";
+  const shopName = settings?.shop_name || "Chiya";
   const tagline =
     settings?.tagline ||
     "Table-side ordering for our tea shop. Guests scan the QR code on their table, order, and follow their chiya from kitchen to table.";

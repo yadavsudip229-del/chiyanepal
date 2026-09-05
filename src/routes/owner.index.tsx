@@ -7,10 +7,10 @@ export const Route = createFileRoute("/owner/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Owner Dashboard — Chiya Ghar" },
+      { title: "Owner Dashboard — Chiya" },
       { name: "description", content: "Live table order board with ETA controls and red-flag alerts." },
-      { property: "og:title", content: "Owner Dashboard — Chiya Ghar" },
-      { property: "og:description", content: "Live table order board for Chiya Ghar." },
+      { property: "og:title", content: "Owner Dashboard — Chiya" },
+      { property: "og:description", content: "Live table order board for Chiya." },
     ],
   }),
   component: OwnerDashboard,

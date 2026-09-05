@@ -7,9 +7,9 @@ export const Route = createFileRoute("/owner/order-history")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Order History — Chiya Ghar" },
+      { title: "Order History — Chiya" },
       { name: "description", content: "View order history and daily revenue reports." },
-      { property: "og:title", content: "Order History — Chiya Ghar" },
+      { property: "og:title", content: "Order History — Chiya" },
       { property: "og:description", content: "Order history and daily revenue." },
     ],
   }),
