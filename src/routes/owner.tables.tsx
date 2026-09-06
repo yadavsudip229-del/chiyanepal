@@ -182,8 +182,16 @@ function TablesPage() {
         </section>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {data.data?.tables.map((table) => (
+      {(() => {
+        const tables = data.data?.tables ?? [];
+        const floors = [...new Set(tables.map((t) => t.floor ?? "Floor 1"))].sort();
+        return floors.map((floor) => (
+          <section key={floor} className="mb-6">
+            <h2 className="mb-3 text-xl">{floor}</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {tables
+                .filter((t) => (t.floor ?? "Floor 1") === floor)
+                .map((table) => (
           <div key={table.id} className="card-surface break-inside-avoid p-4 text-center">
             <div className="flex items-center justify-between print:justify-center">
               <h2 className="text-2xl">Table {table.table_number}</h2>
