@@ -153,11 +153,23 @@ function TablesPage() {
               onChange={(e) => setNewTable(e.target.value)}
             />
           </div>
+          <div className="flex-1">
+            <label className="text-sm font-medium" htmlFor="new-floor">
+              Floor
+            </label>
+            <Input
+              id="new-floor"
+              className="mt-1"
+              placeholder="e.g. Floor 2"
+              value={newFloor}
+              onChange={(e) => setNewFloor(e.target.value)}
+            />
+          </div>
           <Button
             disabled={!newTable.trim()}
             onClick={() =>
               guard(async () => {
-                await addTable({ data: { token: session.token, table_number: newTable } });
+                await addTable({ data: { token: session.token, table_number: newTable, floor: newFloor } });
                 setNewTable("");
               }, "Table added")
             }
