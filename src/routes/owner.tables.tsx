@@ -46,6 +46,7 @@ function TablesPage() {
   const { session } = useStaffSession("owner");
   const queryClient = useQueryClient();
   const [newTable, setNewTable] = useState("");
+  const [newFloor, setNewFloor] = useState("Floor 1");
   type SettingsDraft = { shop_name: string; wifi_ssid: string; wifi_password: string; wifi_encryption: string };
   const [settingsDraft, setSettingsDraft] = useState<SettingsDraft | null>(null);
   const [origin, setOrigin] = useState("");
