@@ -4,7 +4,10 @@ export async function sendPushToAllStaff(payload: { title: string; body: string;
 
   const vapidPublicKey = process.env["VAPID_PUBLIC_KEY"];
   const vapidPrivateKey = process.env["VAPID_PRIVATE_KEY"];
-  if (!vapidPublicKey || !vapidPrivateKey) return;
+  if (!vapidPublicKey || !vapidPrivateKey) {
+    console.error("[push] VAPID keys missing — no notifications sent");
+    return;
+  }
 
   webpush.default.setVapidDetails(
     "mailto:owner@chiyaghar.example",
@@ -17,7 +20,7 @@ export async function sendPushToAllStaff(payload: { title: string; body: string;
     .select("id, endpoint, p256dh, auth, role");
   if (!subs || subs.length === 0) return;
 
-  await Promise.all(
+  const results = await Promise.allSettled(
     subs.map(async (sub) => {
       try {
         await webpush.default.sendNotification(
@@ -26,16 +29,29 @@ export async function sendPushToAllStaff(payload: { title: string; body: string;
             ...payload,
             url: sub.role === "waiter" ? "/waiter" : (payload.url ?? "/owner"),
           }),
+          {
+            // Keep the alert queued for an hour if the phone is offline/asleep,
+            // and ask the push service to deliver it immediately rather than batching it.
+            TTL: 3600,
+            urgency: "high",
+            headers: { Urgency: "high" },
+          },
         );
       } catch (err: unknown) {
         const statusCode =
           typeof err === "object" && err !== null && "statusCode" in err
-            ? err.statusCode
+            ? (err as { statusCode?: number }).statusCode
             : undefined;
-        if (statusCode === 404 || statusCode === 410) {
+        console.error(`[push] send failed (${statusCode ?? "unknown"}) for ${sub.endpoint.slice(0, 40)}…`);
+        // 404/410 = device forgot us. 401/403 = key mismatch, the row can never work again.
+        if (statusCode === 404 || statusCode === 410 || statusCode === 401 || statusCode === 403) {
           await supabaseAdmin.from("push_subscriptions").delete().eq("id", sub.id);
         }
+        throw err;
       }
     }),
   );
+
+  const failed = results.filter((r) => r.status === "rejected").length;
+  if (failed) console.error(`[push] ${failed}/${subs.length} notifications failed`);
 }
