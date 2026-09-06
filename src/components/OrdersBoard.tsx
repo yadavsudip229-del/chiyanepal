@@ -95,29 +95,58 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
     window.localStorage.setItem("chiya-alerts", JSON.stringify({ soundOn, soundId, notifyOn }));
   }, [soundOn, soundId, notifyOn]);
 
-  // Keep this device's push registration tied to the role that is signed in right now.
+  // Keep this device's push registration alive and tied to the role signed in right now.
+  // Phones silently drop registrations, so we re-check on open and whenever the app is reopened.
   useEffect(() => {
     if (!alertsLoaded) return;
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
-    void (async () => {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (!subscription) return;
-      if (!notifyOn) {
-        await disablePushOnThisDevice();
-        return;
+
+    const sync = async () => {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        if (!notifyOn) {
+          const existing = await registration.pushManager.getSubscription();
+          if (existing) await disablePushOnThisDevice();
+          return;
+        }
+        if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+
+        let subscription = await registration.pushManager.getSubscription();
+        if (!subscription) {
+          // The phone forgot us — register again so alerts keep coming.
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+          });
+        }
+        const raw = subscription.toJSON();
+        await savePushSubscription({
+          data: {
+            token: session.token,
+            endpoint: raw.endpoint!,
+            p256dh: raw.keys!["p256dh"]!,
+            auth: raw.keys!["auth"]!,
+          },
+        });
+      } catch {
+        /* try again next time the app is opened */
       }
-      const raw = subscription.toJSON();
-      await savePushSubscription({
-        data: {
-          token: session.token,
-          endpoint: raw.endpoint!,
-          p256dh: raw.keys!["p256dh"]!,
-          auth: raw.keys!["auth"]!,
-        },
-      }).catch(() => {});
-    })();
+    };
+
+    void sync();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    const id = setInterval(sync, 10 * 60 * 1000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      clearInterval(id);
+    };
   }, [alertsLoaded, notifyOn, session.token]);
+
 
   useOrderAlerts(data, soundOn, soundId, notifyOn);
 

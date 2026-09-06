@@ -26,10 +26,56 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     vibrate: [200, 100, 200],
+    // A unique tag per alert so several alerts stack instead of replacing each other.
+    tag: `chiya-${Date.now()}`,
+    renotify: true,
+    requireInteraction: true,
     data: { url: data.url || "/staff" },
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Phones sometimes reset a device's notification registration. When that happens we
+// register again straight away and tell the server, so alerts never silently stop.
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    (async () => {
+      const oldEndpoint = event.oldSubscription?.endpoint;
+      try {
+        const res = await fetch("/api/public/push-device");
+        const { publicKey } = await res.json();
+        if (!publicKey) return;
+
+        const padding = "=".repeat((4 - (publicKey.length % 4)) % 4);
+        const base64 = (publicKey + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const raw = atob(base64);
+        const applicationServerKey = Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+
+        const subscription =
+          event.newSubscription ||
+          (await self.registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey,
+          }));
+
+        const json = subscription.toJSON();
+        if (!oldEndpoint) return;
+        await fetch("/api/public/push-device", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            oldEndpoint,
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth,
+          }),
+        });
+      } catch (e) {
+        // Nothing else we can do in the background; the app re-checks next time it opens.
+      }
+    })(),
+  );
 });
 
 // Fires when the user taps the notification — brings them into the app.

@@ -20,6 +20,7 @@ import { Route as OwnerOrderHistoryRouteImport } from './routes/owner.order-hist
 import { Route as OwnerStaffRouteImport } from './routes/owner.staff'
 import { Route as OwnerTablesRouteImport } from './routes/owner.tables'
 import { Route as ApiPublicHeroImageRouteImport } from './routes/api/public/hero-image'
+import { Route as ApiPublicPushDeviceRouteImport } from './routes/api/public/push-device'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ApiPublicHeroImageRoute = ApiPublicHeroImageRouteImport.update({
   path: '/api/public/hero-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPushDeviceRoute = ApiPublicPushDeviceRouteImport.update({
+  id: '/api/public/push-device',
+  path: '/api/public/push-device',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
+  '/api/public/push-device': typeof ApiPublicPushDeviceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/owner/tables': typeof OwnerTablesRoute
   '/owner': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
+  '/api/public/push-device': typeof ApiPublicPushDeviceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/owner/tables': typeof OwnerTablesRoute
   '/owner/': typeof OwnerIndexRoute
   '/api/public/hero-image': typeof ApiPublicHeroImageRoute
+  '/api/public/push-device': typeof ApiPublicPushDeviceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/owner/tables'
     | '/owner/'
     | '/api/public/hero-image'
+    | '/api/public/push-device'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/owner/tables'
     | '/owner'
     | '/api/public/hero-image'
+    | '/api/public/push-device'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/owner/tables'
     | '/owner/'
     | '/api/public/hero-image'
+    | '/api/public/push-device'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   OwnerTablesRoute: typeof OwnerTablesRoute
   OwnerIndexRoute: typeof OwnerIndexRoute
   ApiPublicHeroImageRoute: typeof ApiPublicHeroImageRoute
+  ApiPublicPushDeviceRoute: typeof ApiPublicPushDeviceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHeroImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push-device': {
+      id: '/api/public/push-device'
+      path: '/api/public/push-device'
+      fullPath: '/api/public/push-device'
+      preLoaderRoute: typeof ApiPublicPushDeviceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   OwnerTablesRoute: OwnerTablesRoute,
   OwnerIndexRoute: OwnerIndexRoute,
   ApiPublicHeroImageRoute: ApiPublicHeroImageRoute,
+  ApiPublicPushDeviceRoute: ApiPublicPushDeviceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
