@@ -219,8 +219,11 @@ function TablesPage() {
               {origin}/order/{table.qr_token}
             </p>
           </div>
-        ))}
-      </div>
+                ))}
+            </div>
+          </section>
+        ));
+      })()}
     </StaffShell>
   );
 }
