@@ -251,6 +251,9 @@ export function OrdersBoard({ session, hideServed }: { session: StaffSession; hi
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h3 className="text-2xl">Table {order.tables?.table_number ?? "?"}</h3>
+                  {order.tables?.floor && (
+                    <p className="text-xs text-muted-foreground">{order.tables.floor}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {new Date(order.created_at).toLocaleTimeString([], {
                       hour: "2-digit",

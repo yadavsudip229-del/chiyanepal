@@ -32,7 +32,7 @@ export type BoardOrder = {
   cancelled_at: string | null;
   created_at: string;
   served_at: string | null;
-  tables: { table_number: string } | null;
+  tables: { table_number: string; floor?: string } | null;
   order_items: BoardOrderItem[];
   red_flags: BoardFlag[];
 };
@@ -42,7 +42,7 @@ async function fetchBoard(): Promise<BoardOrder[]> {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, table_id, status, eta_minutes, eta_set_at, payment_method, payment_status, total_amount, note, time_request_minutes, time_request_at, time_response, cancelled_at, created_at, served_at, tables(table_number), order_items(id, item_name, quantity, price_at_order), red_flags(id, status, raised_at, resolved_at)",
+      "id, table_id, status, eta_minutes, eta_set_at, payment_method, payment_status, total_amount, note, time_request_minutes, time_request_at, time_response, cancelled_at, created_at, served_at, tables(table_number, floor), order_items(id, item_name, quantity, price_at_order), red_flags(id, status, raised_at, resolved_at)",
     )
     .gte("created_at", since)
     .order("created_at", { ascending: false });

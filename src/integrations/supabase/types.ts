@@ -326,18 +326,21 @@ export type Database = {
       tables: {
         Row: {
           created_at: string
+          floor: string
           id: string
           qr_token: string
           table_number: string
         }
         Insert: {
           created_at?: string
+          floor?: string
           id?: string
           qr_token?: string
           table_number: string
         }
         Update: {
           created_at?: string
+          floor?: string
           id?: string
           qr_token?: string
           table_number?: string

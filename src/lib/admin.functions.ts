@@ -74,14 +74,15 @@ export const deleteMenuItem = createServerFn({ method: "POST" })
   });
 
 export const addTable = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string; table_number: string }) => input)
+  .inputValidator((input: { token: string; table_number: string; floor?: string | undefined }) => input)
   .handler(async ({ data }) => {
     const { requireRole } = await import("./staff-session.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     requireRole(data.token, ["owner"]);
     const number = data.table_number.trim().slice(0, 20);
     if (!number) throw new Error("Table number is required");
-    const { error } = await supabaseAdmin.from("tables").insert({ table_number: number });
+    const floor = data.floor?.trim().slice(0, 40) || "Floor 1";
+    const { error } = await supabaseAdmin.from("tables").insert({ table_number: number, floor });
     if (error) throw new Error(error.message.includes("duplicate") ? "That table already exists" : error.message);
     return { ok: true };
   });

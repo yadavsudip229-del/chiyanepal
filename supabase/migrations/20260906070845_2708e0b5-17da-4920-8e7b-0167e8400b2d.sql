@@ -1,0 +1,1 @@
+ALTER TABLE public.tables ADD COLUMN floor text NOT NULL DEFAULT 'Floor 1';
