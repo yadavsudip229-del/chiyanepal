@@ -207,7 +207,7 @@ function TablesPage() {
                 <Trash2 className="size-4 text-destructive" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">{draft.shop_name}</p>
+            <p className="text-xs text-muted-foreground">{draft.shop_name} · {table.floor ?? "Floor 1"}</p>
             <div className="mt-3 flex justify-center gap-4">
               <QrTile
                 value={wifiPayload(draft.wifi_ssid, draft.wifi_password, draft.wifi_encryption)}

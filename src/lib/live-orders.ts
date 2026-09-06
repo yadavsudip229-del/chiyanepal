@@ -32,7 +32,7 @@ export type BoardOrder = {
   cancelled_at: string | null;
   created_at: string;
   served_at: string | null;
-  tables: { table_number: string } | null;
+  tables: { table_number: string; floor?: string } | null;
   order_items: BoardOrderItem[];
   red_flags: BoardFlag[];
 };
